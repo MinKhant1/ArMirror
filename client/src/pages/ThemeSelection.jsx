@@ -1,0 +1,62 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { THEMES } from '../themes/themes.js';
+import ThemeCard from '../components/ThemeCard.jsx';
+import './ThemeSelection.css';
+
+export default function ThemeSelection() {
+  const [selectedId, setSelectedId] = useState(null);
+  const navigate = useNavigate();
+
+  const handleStart = () => {
+    if (selectedId) {
+      navigate(`/mirror/${selectedId}`);
+    }
+  };
+
+  return (
+    <div className="theme-selection">
+      <div className="theme-selection__bg" aria-hidden="true">
+        <div className="theme-selection__glow theme-selection__glow--1" />
+        <div className="theme-selection__glow theme-selection__glow--2" />
+        <div className="theme-selection__glow theme-selection__glow--3" />
+      </div>
+
+      <header className="theme-selection__header">
+        <div className="theme-selection__logo">
+          <span className="theme-selection__crown" aria-hidden="true">
+            👑
+          </span>
+          <span className="theme-selection__signature">Signature</span>
+          <h1 className="theme-selection__brand">SHAL LIT MOMENTS</h1>
+        </div>
+      </header>
+
+      <main className="theme-selection__main">
+        <div className="theme-selection__cards">
+          {THEMES.map((theme) => (
+            <ThemeCard
+              key={theme.id}
+              theme={theme}
+              selected={selectedId === theme.id}
+              onSelect={() => setSelectedId(theme.id)}
+            />
+          ))}
+        </div>
+      </main>
+
+      <footer className="theme-selection__footer">
+        <button
+          type="button"
+          className={`theme-selection__cta ${selectedId ? 'theme-selection__cta--active' : ''}`}
+          onClick={handleStart}
+          disabled={!selectedId}
+        >
+          {selectedId
+            ? 'Enter the Mirror'
+            : 'Select an AI mirror to begin'}
+        </button>
+      </footer>
+    </div>
+  );
+}
