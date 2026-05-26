@@ -1,4 +1,4 @@
-export const ANIMALS = ['cat', 'dog', 'fox', 'rabbit'] as const;
+export const ANIMALS = ['dog', 'cow'] as const;
 export type AnimalId = (typeof ANIMALS)[number];
 
 export type AnimalConfig = {
@@ -18,22 +18,12 @@ export type AnimalConfig = {
 };
 
 export const ANIMAL_CONFIG: Record<AnimalId, AnimalConfig> = {
-  cat: {
-    id: 'cat',
-    color: '#C9956C',
-    label: 'CAT',
-    emoji: '🐱',
-    parts: ['ear', 'nose', 'whiskers-left', 'whiskers-right', 'blush'],
-    idleAnimation: 'earTwitch',
-    smileReaction: 'earsPerk',
-    jawOpenReaction: 'sparklesBurst',
-  },
   dog: {
     id: 'dog',
     color: '#D4A03A',
     label: 'DOG',
     emoji: '🐶',
-    parts: ['ear', 'nose', 'blush', 'eyepatch'],
+    parts: ['ear', 'nose'],
     conditionalParts: {
       tongue: { showWhen: 'jawOpen', threshold: 0.5 },
     },
@@ -41,28 +31,13 @@ export const ANIMAL_CONFIG: Record<AnimalId, AnimalConfig> = {
     smileReaction: 'tongueAppear',
     headTiltReaction: 'earPhysicsSwing',
   },
-  fox: {
-    id: 'fox',
-    color: '#E05C2A',
-    label: 'FOX',
-    emoji: '🦊',
-    parts: ['ear', 'nose', 'markings-left', 'markings-right'],
-    idleAnimation: 'tailSwish',
-    surprisedReaction: 'earsFlatten',
-    movementReaction: 'markingsGlow',
-  },
-  rabbit: {
-    id: 'rabbit',
-    color: '#9C7EC4',
-    label: 'RABBIT',
-    emoji: '🐰',
-    parts: ['ear', 'nose', 'whiskers-left', 'whiskers-right', 'blush'],
-    conditionalParts: {
-      teeth: { showWhen: 'jawOpen', threshold: 0.5 },
-    },
-    idleAnimation: 'noseTwitch',
-    smileReaction: 'cheeksPuff',
-    jumpReaction: 'earsFlyUp',
+  cow: {
+    id: 'cow',
+    color: '#F4F0E8',
+    label: 'COW',
+    emoji: '🐮',
+    parts: ['ear', 'nose', 'horn-left', 'horn-right'],
+    idleAnimation: 'hornBop',
   },
 };
 
@@ -96,26 +71,14 @@ export const UI_COLORS = {
 };
 
 export const ASSET_PATHS: Record<string, string> = {
-  'cat/ear': '/assets/animal-kingdom/cat/cat_ear.png',
-  'cat/nose': '/assets/animal-kingdom/cat/cat_nose.png',
-  'cat/whiskers-left': '/assets/animal-kingdom/cat/cat_whiskers_left.png',
-  'cat/whiskers-right': '/assets/animal-kingdom/cat/cat_whiskers_right.png',
-  'cat/blush': '/assets/animal-kingdom/cat/cat_blush.png',
-  'dog/ear': '/assets/animal-kingdom/dog/dog_ear.png',
-  'dog/nose': '/assets/animal-kingdom/dog/dog_nose.png',
-  'dog/tongue': '/assets/animal-kingdom/dog/dog_tongue.png',
-  'dog/eyepatch': '/assets/animal-kingdom/dog/dog_eyepatch.png',
-  'dog/blush': '/assets/animal-kingdom/dog/dog_blush.png',
-  'fox/ear': '/assets/animal-kingdom/fox/fox_ear.png',
-  'fox/nose': '/assets/animal-kingdom/fox/fox_nose.png',
-  'fox/markings-left': '/assets/animal-kingdom/fox/fox_markings_left.png',
-  'fox/markings-right': '/assets/animal-kingdom/fox/fox_markings_right.png',
-  'rabbit/ear': '/assets/animal-kingdom/rabbit/rabbit_ear.png',
-  'rabbit/nose': '/assets/animal-kingdom/rabbit/rabbit_nose.png',
-  'rabbit/whiskers-left': '/assets/animal-kingdom/rabbit/rabbit_whiskers_left.png',
-  'rabbit/whiskers-right': '/assets/animal-kingdom/rabbit/rabbit_whiskers_right.png',
-  'rabbit/blush': '/assets/animal-kingdom/rabbit/rabbit_blush.png',
-  'rabbit/teeth': '/assets/animal-kingdom/rabbit/rabbit_teeth.png',
+  // Dog assets were renamed; current files are left/right ear, mouth, and tongue.
+  'dog/ear': '/assets/animal-kingdom/dog/left-ear.png',
+  'dog/nose': '/assets/animal-kingdom/dog/mouth.png',
+  'dog/tongue': '/assets/animal-kingdom/dog/tongue.png',
+  'cow/ear': '/assets/animal-kingdom/cow/left-ear.png',
+  'cow/nose': '/assets/animal-kingdom/cow/mouth.png',
+  'cow/horn-left': '/assets/animal-kingdom/cow/left-horn.png',
+  'cow/horn-right': '/assets/animal-kingdom/cow/right-horn.png',
 };
 
 export const ASSET_KEYS = Object.keys(ASSET_PATHS);

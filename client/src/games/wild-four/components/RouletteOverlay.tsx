@@ -8,9 +8,9 @@ type Props = {
   locked: boolean;
 };
 
-export function RouletteOverlay({ displayAnimal, pool, phase, locked }: Props) {
+export function RouletteOverlay({ displayAnimal, pool, phase }: Props) {
   return (
-    <div className={`wild-four__roulette ${locked ? 'wild-four__roulette--locked' : ''}`}>
+    <div className="wild-four__roulette">
       <div className="wild-four__roulette-cards">
         {pool.map((id) => {
           const cfg = ANIMAL_CONFIG[id];

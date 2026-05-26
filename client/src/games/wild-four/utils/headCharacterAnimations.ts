@@ -1,6 +1,5 @@
 import { ANIMAL_CONFIG, type AnimalId } from '../config';
-import { earAnchorPointsLm, lmToPx } from './landmarkHelpers';
-import type { TrackedPlayer } from './filterRenderer';
+import { lmToPx } from './landmarkHelpers';
 
 export type HeadAnimKind = 'bounce' | 'wiggle' | 'pulse' | 'orbit' | 'float' | 'shake' | 'spin';
 
@@ -15,19 +14,7 @@ export type VisibleFace = {
   headRoll: number;
 };
 
-const ALL_ANIMS: HeadAnimKind[] = ['bounce', 'wiggle', 'pulse', 'orbit', 'float', 'shake', 'spin'];
-
-/** How long each random animation plays before the icon is removed. */
-const ANIM_DURATION_MS = 2000;
-/** Icon stays hidden this long after the animation ends. */
-const HIDE_AFTER_ANIM_MS = 1000;
-
-type SlotState = {
-  kind: HeadAnimKind;
-  seed: number;
-  startedAt: number;
-  animal: AnimalId | null;
-};
+const ROULETTE_ANIMS: HeadAnimKind[] = ['bounce', 'wiggle', 'pulse', 'orbit', 'float', 'shake', 'spin'];
 
 export type RouletteDrawState = {
   slot: number | null;
@@ -36,77 +23,29 @@ export type RouletteDrawState = {
 };
 
 export class HeadCharacterAnimator {
-  private slots = new Map<number, SlotState>();
-  private groupStartedAt = 0;
+  private rouletteAnim: HeadAnimKind = 'spin';
 
-  private pickGroupAnim(): HeadAnimKind {
-    return ALL_ANIMS[Math.floor(Math.random() * ALL_ANIMS.length)];
+  /** Call when roulette finishes so forehead emoji does not linger. */
+  clearRoulette() {
+    this.rouletteAnim = ROULETTE_ANIMS[Math.floor(Math.random() * ROULETTE_ANIMS.length)];
   }
 
-  /** Start the same random animation on every active head at once. */
-  private startGroupCycle(faces: VisibleFace[], timeMs: number) {
-    const kind = this.pickGroupAnim();
-    this.groupStartedAt = timeMs;
-    for (const face of faces) {
-      this.slots.set(face.slot, {
-        kind,
-        seed: face.slot * 17.3,
-        startedAt: timeMs,
-        animal: face.animal,
-      });
-    }
-  }
-
-  private syncGroup(faces: VisibleFace[], timeMs: number) {
-    if (!faces.length) {
-      this.groupStartedAt = 0;
-      return;
-    }
-
-    const cycleMs = ANIM_DURATION_MS + HIDE_AFTER_ANIM_MS;
-    const someoneNew = faces.some((f) => !this.slots.has(f.slot));
-    const cycleEnded =
-      this.groupStartedAt > 0 && timeMs >= this.groupStartedAt + cycleMs;
-
-    if (someoneNew || cycleEnded || this.groupStartedAt === 0) {
-      this.startGroupCycle(faces, timeMs);
-      return;
-    }
-
-    for (const face of faces) {
-      const state = this.slots.get(face.slot);
-      if (state) state.animal = face.animal;
-    }
-  }
-
-  private slotVisible(slot: number, timeMs: number) {
-    const state = this.slots.get(slot);
-    if (!state) return { state: null, visible: false };
-    const visible = timeMs < state.startedAt + ANIM_DURATION_MS;
-    return { state, visible };
-  }
-
-  prune(activeSlots: number[]) {
-    const active = new Set(activeSlots);
-    for (const slot of this.slots.keys()) {
-      if (!active.has(slot)) this.slots.delete(slot);
-    }
-  }
-
-  private headTop(face: VisibleFace, width: number, height: number) {
+  /** Forehead anchor (MediaPipe landmark 10). */
+  private forehead(
+    face: VisibleFace,
+    width: number,
+    height: number
+  ): { x: number; y: number } {
     const lm = face.landmarks;
-    const anchors = earAnchorPointsLm(lm, width, height, face.faceWidth);
-    if (anchors) {
-      const y = Math.min(anchors.left.y, anchors.right.y);
-      const x = (anchors.left.x + anchors.right.x) / 2;
-      return { x, y: y - face.faceHeight * 0.22 };
-    }
     const forehead = lm[10];
     if (forehead) {
       const p = lmToPx(forehead, width, height);
-      return { x: p.x, y: p.y - face.faceHeight * 0.35 };
+      return { x: p.x, y: p.y - face.faceHeight * 0.06 };
     }
-    return { x: face.faceCenterX, y: face.faceCenterY - face.faceHeight * 0.55 };
+    return {
+      x: face.faceCenterX,
+      y: face.faceCenterY - face.faceHeight * 0.45,
+    };
   }
 
   private animOffset(kind: HeadAnimKind, t: number, seed: number, size: number) {
@@ -173,6 +112,10 @@ export class HeadCharacterAnimator {
     ctx.restore();
   }
 
+  /**
+   * Forehead emoji only while roulette is active for a slot.
+   * Hidden after assignment (no overlay, no post-roulette emoji).
+   */
   draw(
     ctx: CanvasRenderingContext2D,
     faces: VisibleFace[],
@@ -181,34 +124,28 @@ export class HeadCharacterAnimator {
     timeMs: number,
     roulette?: RouletteDrawState
   ) {
-    const activeSlots = faces.map((f) => f.slot);
-    this.prune(activeSlots);
-    this.syncGroup(faces, timeMs);
+    if (roulette?.slot == null || !roulette.displayAnimal) return;
 
-    for (const face of faces) {
-      const top = this.headTop(face, width, height);
-      const size = Math.max(28, Math.min(72, face.faceWidth * 0.38));
-      const isRouletteTarget = roulette?.slot === face.slot && roulette.displayAnimal;
+    const face = faces.find((f) => f.slot === roulette.slot);
+    if (!face) return;
 
-      if (isRouletteTarget && roulette.displayAnimal) {
-        const cfg = ANIMAL_CONFIG[roulette.displayAnimal];
-        const fast = roulette.locked ? 'pulse' : 'spin';
-        const seed = face.slot * 17;
-        this.drawEmoji(ctx, cfg.emoji, top.x, top.y, size * 1.1, timeMs, fast, seed, cfg.color);
-        continue;
-      }
+    const forehead = this.forehead(face, width, height);
+    const size = Math.max(28, Math.min(72, face.faceWidth * 0.38));
+    const cfg = ANIMAL_CONFIG[roulette.displayAnimal];
+    const kind = roulette.locked ? 'pulse' : this.rouletteAnim;
+    const seed = face.slot * 17;
 
-      const { state, visible } = this.slotVisible(face.slot, timeMs);
-      if (!state || !visible) continue;
-
-      if (!face.animal) {
-        this.drawEmoji(ctx, '❓', top.x, top.y, size * 0.85, timeMs, state.kind, state.seed);
-        continue;
-      }
-
-      const cfg = ANIMAL_CONFIG[face.animal];
-      this.drawEmoji(ctx, cfg.emoji, top.x, top.y, size, timeMs, state.kind, state.seed, cfg.color);
-    }
+    this.drawEmoji(
+      ctx,
+      cfg.emoji,
+      forehead.x,
+      forehead.y,
+      size * 1.05,
+      timeMs,
+      kind,
+      seed,
+      cfg.color
+    );
   }
 }
 

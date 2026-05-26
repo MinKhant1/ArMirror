@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { THEMES } from '../themes/themes.js';
 import ThemeCard from '../components/ThemeCard.jsx';
+import backgroundImg from '../components/site/background.png';
 import './ThemeSelection.css';
 
 export default function ThemeSelection() {
@@ -16,11 +17,11 @@ export default function ThemeSelection() {
 
   return (
     <div className="theme-selection">
-      <div className="theme-selection__bg" aria-hidden="true">
-        <div className="theme-selection__glow theme-selection__glow--1" />
-        <div className="theme-selection__glow theme-selection__glow--2" />
-        <div className="theme-selection__glow theme-selection__glow--3" />
-      </div>
+      <div
+        className="theme-selection__bg"
+        aria-hidden="true"
+        style={{ backgroundImage: `url(${backgroundImg})` }}
+      />
 
       <header className="theme-selection__header">
         <div className="theme-selection__logo">

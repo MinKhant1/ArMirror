@@ -7,6 +7,7 @@ import {
   EVENT_NAME,
   FONTS,
   ANIMAL_CONFIG,
+  ANIMALS,
   type AnimalId,
 } from '../config';
 
@@ -25,8 +26,9 @@ export async function captureGameScreen(wrapper: HTMLElement): Promise<string> {
   ctx.drawImage(canvas, 0, 0, ARTWORK_WIDTH, ARTWORK_HEIGHT);
 
   const grad = ctx.createLinearGradient(0, 0, ARTWORK_WIDTH, ARTWORK_HEIGHT);
-  const animals: AnimalId[] = ['cat', 'dog', 'fox', 'rabbit'];
-  animals.forEach((a, i) => grad.addColorStop(i / 3, ANIMAL_CONFIG[a].color));
+  const animals: AnimalId[] = [...ANIMALS];
+  const denom = Math.max(1, animals.length - 1);
+  animals.forEach((a, i) => grad.addColorStop(i / denom, ANIMAL_CONFIG[a].color));
   ctx.strokeStyle = grad;
   ctx.lineWidth = 8;
   ctx.strokeRect(4, 4, ARTWORK_WIDTH - 8, ARTWORK_HEIGHT - 8);

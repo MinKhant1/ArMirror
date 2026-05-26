@@ -173,19 +173,6 @@
   background: rgba(0, 0, 0, 0.65);
 }
 
-.wild-four__roulette--locked {
-  animation: wild-shake 0.15s ease 3;
-}
-
-@keyframes wild-shake {
-  25% {
-    transform: translateX(-4px);
-  }
-  75% {
-    transform: translateX(4px);
-  }
-}
-
 .wild-four__roulette-cards {
   display: flex;
   gap: 1rem;
@@ -199,30 +186,12 @@
   border-radius: 16px;
   border: 1px solid;
   text-align: center;
-  transition: transform 0.2s ease, opacity 0.2s ease;
   opacity: 0.35;
-  animation: wild-card-bounce 0.6s ease infinite;
 }
 
 .wild-four__roulette-card--active {
   opacity: 1;
-  transform: scale(1.1);
-  animation: wild-card-slam 0.35s ease;
-}
-
-@keyframes wild-card-bounce {
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-@keyframes wild-card-slam {
-  0% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1.1);
-  }
+  transform: scale(1.05);
 }
 
 .wild-four__roulette-emoji {
@@ -353,6 +322,21 @@
 .wild-four__hint {
   font-size: 0.7rem;
   margin-top: 0.5rem;
+}
+
+.wild-four__hint--detect {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #f5f0e8;
+  font-family: 'Raleway', sans-serif;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .wild-four__error-overlay {

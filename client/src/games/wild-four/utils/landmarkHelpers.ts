@@ -79,6 +79,45 @@ export function mouthCenterLm(
   };
 }
 
+/** Center of the open mouth (biased toward the lower lip / jaw opening). */
+export function openMouthCenterLm(
+  lm: Landmark[],
+  width: number,
+  height: number
+): { x: number; y: number } | null {
+  const upperL = lm[13];
+  const upperR = lm[14];
+  if (!upperL || !upperR) return mouthCenterLm(lm, width, height);
+
+  const upper = midpointLm(upperL, upperR, width, height);
+
+  const mouthX =
+    lm[61] && lm[291]
+      ? midpointLm(lm[61], lm[291], width, height).x
+      : upper.x;
+
+  let lowerY: number | null = null;
+  const lowerInnerL = lm[78];
+  const lowerInnerR = lm[308];
+  const jawL = lm[17];
+  const jawR = lm[18];
+
+  if (lowerInnerL && lowerInnerR && jawL && jawR) {
+    const inner = midpointLm(lowerInnerL, lowerInnerR, width, height);
+    const jaw = midpointLm(jawL, jawR, width, height);
+    lowerY = inner.y * 0.35 + jaw.y * 0.65;
+  } else if (lowerInnerL && lowerInnerR) {
+    lowerY = midpointLm(lowerInnerL, lowerInnerR, width, height).y;
+  } else if (jawL && jawR) {
+    lowerY = midpointLm(jawL, jawR, width, height).y;
+  }
+
+  if (lowerY == null) return mouthCenterLm(lm, width, height);
+
+  // Weight toward lower lip so the tongue sits in the visual center of the opening.
+  return { x: mouthX, y: upper.y * 0.22 + lowerY * 0.78 };
+}
+
 /**
  * Top-of-head ear anchors (forehead + outer brow), not side temple points.
  * Returns screen-left and screen-right positions.

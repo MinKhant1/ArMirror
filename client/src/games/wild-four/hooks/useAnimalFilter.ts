@@ -11,10 +11,7 @@ import {
 const defaultAnim = (): AnimationState => ({
   earTwitch: 0,
   earSwing: 0,
-  markingsGlow: 0.4,
-  noseTwitch: 0,
   earsPerk: 0,
-  earsFlyUp: 0,
   headTiltBoost: 0,
 });
 

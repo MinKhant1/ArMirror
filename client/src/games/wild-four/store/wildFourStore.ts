@@ -27,6 +27,8 @@ type WildFourState = {
   players: PlayerSlot[];
   rouletteSlot: number | null;
   rouletteWinner: AnimalId | null;
+  roulettePreview: AnimalId | null;
+  rouletteLocked: boolean;
   groupMomentPlayed: boolean;
   playingStartedAt: number | null;
   captureCountdown: number | null;
@@ -38,6 +40,7 @@ type WildFourState = {
   assignAnimal: (slot: number, animal: AnimalId) => void;
   setPlayers: (players: PlayerSlot[]) => void;
   setRoulette: (slot: number | null, winner?: AnimalId | null) => void;
+  setRoulettePreview: (animal: AnimalId | null, locked?: boolean) => void;
   setGroupMomentPlayed: (v: boolean) => void;
   setPlayingStartedAt: (t: number | null) => void;
   setCaptureCountdown: (n: number | null) => void;
@@ -52,6 +55,8 @@ export const useWildFourStore = create<WildFourState>((set, get) => ({
   players: [],
   rouletteSlot: null,
   rouletteWinner: null,
+  roulettePreview: null,
+  rouletteLocked: false,
   groupMomentPlayed: false,
   playingStartedAt: null,
   captureCountdown: null,
@@ -70,6 +75,8 @@ export const useWildFourStore = create<WildFourState>((set, get) => ({
       players: [],
       rouletteSlot: null,
       rouletteWinner: null,
+      roulettePreview: null,
+      rouletteLocked: false,
       groupMomentPlayed: false,
       playingStartedAt: null,
       captureCountdown: null,
@@ -110,6 +117,9 @@ export const useWildFourStore = create<WildFourState>((set, get) => ({
 
   setRoulette: (rouletteSlot, winner = null) =>
     set({ rouletteSlot, rouletteWinner: winner }),
+
+  setRoulettePreview: (roulettePreview, rouletteLocked = false) =>
+    set({ roulettePreview, rouletteLocked }),
 
   setGroupMomentPlayed: (groupMomentPlayed) => set({ groupMomentPlayed }),
 

@@ -2,11 +2,9 @@ import { ANIMAL_CONFIG, JAW_OPEN_THRESHOLD, type AnimalId } from '../config';
 
 type Landmark = { x: number; y: number; z?: number };
 import {
-  blendLmToPx,
   distLm,
   lmToPx,
-  mouthCenterLm,
-  upperLipCenterLm,
+  openMouthCenterLm,
   earAnchorPointsLm,
 } from './landmarkHelpers';
 
@@ -28,10 +26,7 @@ export type TrackedPlayer = {
 export type AnimationState = {
   earTwitch: number;
   earSwing: number;
-  markingsGlow: number;
-  noseTwitch: number;
   earsPerk: number;
-  earsFlyUp: number;
   headTiltBoost: number;
 };
 
@@ -45,15 +40,19 @@ function drawPart(
   roll: number,
   alpha = 1,
   extraRotate = 0,
-  flipX = false
+  flipX = false,
+  anchor: 'center' | 'top' | 'bottom' = 'center'
 ) {
-  if (!img || (!img.naturalWidth && !img.width)) return;
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.translate(x, y);
   ctx.rotate(roll + extraRotate);
   if (flipX) ctx.scale(-1, 1);
-  ctx.drawImage(img, -w / 2, -h / 2, w, h);
+  const dy = anchor === 'top' ? 0 : anchor === 'bottom' ? -h : -h / 2;
+  ctx.drawImage(img, -w / 2, dy, w, h);
   ctx.restore();
 }
 
@@ -66,32 +65,13 @@ export function computeAnimationState(
   const next = { ...anim };
   const t = time * 0.001;
 
-  if (animal === 'cat') {
-    const twitch = Math.sin(t * 2) > 0.95 ? 1 : 0.1;
-    next.earTwitch = Math.sin(t * 0.5) * ((8 * Math.PI) / 180) * twitch;
-  }
   if (animal === 'dog') {
     const amp = player.movementVelocity > 0.02 ? 15 : 5;
     next.earSwing = Math.sin(t * 1.2) * ((amp * Math.PI) / 180);
     next.headTiltBoost += (Math.abs(player.headRoll) > 0.15 ? 1 : -next.headTiltBoost) * 0.15;
   }
-  if (animal === 'fox') {
-    next.markingsGlow = 0.4 + Math.sin(t * (player.movementVelocity > 0.02 ? 3 : 1.5)) * 0.15;
-  }
-  if (animal === 'rabbit') {
-    next.noseTwitch = Math.sin(t * 4) * 0.08;
-  }
-  if (player.isSmiling) {
-    next.earsPerk = Math.min(1, next.earsPerk + 0.08);
-    if (animal === 'rabbit') next.noseTwitch = 0.12;
-  } else {
-    next.earsPerk *= 0.92;
-  }
-  if (player.movementVelocity > 0.05 && animal === 'rabbit') {
-    next.earsFlyUp = Math.min(1, next.earsFlyUp + 0.1);
-  } else {
-    next.earsFlyUp *= 0.9;
-  }
+  if (player.isSmiling) next.earsPerk = Math.min(1, next.earsPerk + 0.08);
+  else next.earsPerk *= 0.92;
 
   return next;
 }
@@ -112,24 +92,14 @@ export function drawAnimalFilter(
 
   if (player.animal === 'dog' && player.isJawOpen) {
     const tongue = images.get('dog/tongue');
-    const mouth = mouthCenterLm(lm, width, height);
+    const mouth = openMouthCenterLm(lm, width, height);
     if (tongue && mouth) {
       const tw = fw * 0.32;
       const th = tw * (tongue.height / tongue.width);
-      drawPart(ctx, tongue, mouth.x, mouth.y, tw, th, roll);
+      const tongueY = mouth.y + player.faceHeight * 0.09;
+      drawPart(ctx, tongue, mouth.x, tongueY, tw, th, roll);
     }
   }
-
-  if (player.animal === 'rabbit' && player.isJawOpen) {
-    const teeth = images.get('rabbit/teeth');
-    const lip = upperLipCenterLm(lm, width, height);
-    if (teeth && lip) {
-      const tw = fw * 0.28;
-      const th = tw * (teeth.height / teeth.width);
-      drawPart(ctx, teeth, lip.x, lip.y, tw, th, roll);
-    }
-  }
-
 }
 
 /** Blush, nose, whiskers, fox markings — drawn outside the face clip (visible when head turns). */
@@ -146,22 +116,11 @@ export function drawAnimalAccessories(
 
   const roll = player.headRoll;
   const fw = player.faceWidth;
-  const fh = player.faceHeight;
 
   const l50 = lm[50];
   const l280 = lm[280];
-  const l234 = lm[234];
-  const l454 = lm[454];
   const l4 = lm[4];
   const l33 = lm[33];
-
-  if (player.animal === 'dog' && l33) {
-    const patch = images.get('dog/eyepatch');
-    if (patch) {
-      const pos = lmToPx(l33, width, height);
-      drawPart(ctx, patch, pos.x, pos.y, fw * 0.38, fw * 0.38, roll);
-    }
-  }
 
   const blush = images.get(`${player.animal}/blush`);
   if (blush && l50 && l280) {
@@ -177,39 +136,10 @@ export function drawAnimalAccessories(
   if (nose && l4) {
     const pos = lmToPx(l4, width, height);
     const nw = fw * 0.28;
-    const scale = player.animal === 'rabbit' ? 1 + anim.noseTwitch : 1;
-    drawPart(ctx, nose, pos.x, pos.y, nw * scale, nw * scale * (nose.height / nose.width), roll);
+    drawPart(ctx, nose, pos.x, pos.y, nw, nw * (nose.height / nose.width), roll);
   }
 
-  if (player.animal === 'cat' || player.animal === 'rabbit') {
-    const leftImg = images.get(`${player.animal}/whiskers-left`);
-    const rightImg = images.get(`${player.animal}/whiskers-right`);
-    const ww = fw * (player.animal === 'rabbit' ? 0.6 : 0.55);
-    const wh = ww * 0.35;
-    if (leftImg && l234) {
-      const left = lmToPx(l234, width, height);
-      drawPart(ctx, leftImg, left.x, left.y + fh * 0.06, ww, wh, roll, 0.95);
-    }
-    if (rightImg && l454) {
-      const right = lmToPx(l454, width, height);
-      drawPart(ctx, rightImg, right.x, right.y + fh * 0.06, ww, wh, roll, 0.95);
-    }
-  }
-
-  if (player.animal === 'fox' && l234 && l454 && l50 && l280) {
-    const markLeft = images.get('fox/markings-left');
-    const markRight = images.get('fox/markings-right');
-    const bw = fw * 0.3;
-    const inward = 0.58;
-    if (markLeft) {
-      const left = blendLmToPx(l234, l50, width, height, inward);
-      drawPart(ctx, markLeft, left.x, left.y, bw, bw, roll, anim.markingsGlow);
-    }
-    if (markRight) {
-      const right = blendLmToPx(l454, l280, width, height, inward);
-      drawPart(ctx, markRight, right.x, right.y, bw, bw, roll, anim.markingsGlow);
-    }
-  }
+  // Note: cow horns are drawn in drawAnimalEars after the ears to avoid being covered.
 }
 
 /** Ears only — called outside the face clip rect */
@@ -234,55 +164,121 @@ export function drawAnimalEars(
   const imgW = img.naturalWidth || img.width || 512;
   const imgH = img.naturalHeight || img.height || 512;
   const scaleByAnimal: Record<AnimalId, number> = {
-    cat: 0.56,
     dog: 0.6,
-    fox: 0.48,
-    rabbit: 0.82,
+    cow: 0.72,
   };
   const earW = fw * (scaleByAnimal[animal] ?? 0.65);
   const earH = earW * (imgH / imgW);
 
-  const anchors = earAnchorPointsLm(lm, width, height, fw);
+  let anchors = earAnchorPointsLm(lm, width, height, fw);
   if (!anchors) return;
 
+  let dogEarAttach: { left: { x: number; y: number }; right: { x: number; y: number } } | null =
+    null;
+  if (animal === 'dog' && lm[234] && lm[454]) {
+    const templeL = lmToPx(lm[234], width, height);
+    const templeR = lmToPx(lm[454], width, height);
+    // Bottom of ear sits on the head at the temple; ear extends upward.
+    const attachY = Math.min(templeL.y, templeR.y, anchors.left.y) - fw * 0.06;
+    dogEarAttach = {
+      left: { x: templeL.x, y: attachY },
+      right: { x: templeR.x, y: attachY },
+    };
+    anchors = {
+      left: { x: templeL.x, y: anchors.left.y },
+      right: { x: templeR.x, y: anchors.right.y },
+    };
+  }
+
   const liftByAnimal: Record<AnimalId, number> = {
-    cat: 0.48,
-    dog: 0.46,
-    fox: 0.55,
-    rabbit: 0.58,
+    dog: 0,
+    cow: 0.5,
   };
-  const earY = anchors.left.y - earH * (liftByAnimal[animal] ?? 0.4);
+  const earCenterY = anchors.left.y - earH * (liftByAnimal[animal] ?? 0.4);
 
   let extra = 0;
-  if (animal === 'cat') extra = anim.earTwitch + anim.earsPerk * 0.12;
   if (animal === 'dog') extra = anim.earSwing;
-  if (animal === 'rabbit') extra = anim.earsPerk * 0.12 - anim.earsFlyUp * 0.2;
+  if (animal === 'cow') extra = anim.earsPerk * 0.06;
 
   const nudge = fw * 0.03;
+  const dogEarAnchor: 'bottom' | 'center' = 'bottom';
+
+  // Cow horns: draw BEFORE ears so they appear behind the ear sprites.
+  if (animal === 'cow') {
+    const hornL = images.get('cow/horn-left');
+    const hornR = images.get('cow/horn-right');
+
+    if (hornL || hornR) {
+      const hornW = fw * 0.28; // slightly smaller
+
+      const hornLAspect =
+        hornL && hornL.naturalWidth
+          ? hornL.naturalHeight / hornL.naturalWidth
+          : hornL && hornL.width
+            ? hornL.height / hornL.width
+            : 1;
+      const hornRAspect =
+        hornR && hornR.naturalWidth
+          ? hornR.naturalHeight / hornR.naturalWidth
+          : hornR && hornR.width
+            ? hornR.height / hornR.width
+            : 1;
+
+      const hornLH = hornW * hornLAspect;
+      const hornRH = hornW * hornRAspect;
+
+      // Move horns closer to center (lerp towards face center).
+      const centerX = player.faceCenterX;
+      const xL = anchors.left.x + (centerX - anchors.left.x) * 0.38;
+      const xR = anchors.right.x + (centerX - anchors.right.x) * 0.38;
+
+      // Place horns slightly above ear centers.
+      const hornY = earCenterY - earH * 0.15 - hornLH * 0.04;
+
+      if (hornL) {
+        drawPart(ctx, hornL, xL, hornY, hornW, hornLH, roll, 1, -0.06);
+      }
+      if (hornR) {
+        drawPart(ctx, hornR, xR, hornY, hornW, hornRH, roll, 1, 0.06);
+      }
+    }
+  }
+
+  const leftEarY =
+    animal === 'dog' && dogEarAttach ? dogEarAttach.left.y : earCenterY;
+  const rightEarY =
+    animal === 'dog' && dogEarAttach ? dogEarAttach.right.y : earCenterY;
+  const leftEarX =
+    animal === 'dog' && dogEarAttach ? dogEarAttach.left.x - nudge : anchors.left.x - nudge;
+  const rightEarX =
+    animal === 'dog' && dogEarAttach ? dogEarAttach.right.x + nudge : anchors.right.x + nudge;
+  const earAnchor = animal === 'dog' ? dogEarAnchor : 'center';
 
   drawPart(
     ctx,
     img,
-    anchors.left.x - nudge,
-    earY,
+    leftEarX,
+    leftEarY,
     earW,
     earH,
     roll,
     1,
     extra - 0.08,
-    false
+    false,
+    earAnchor
   );
   drawPart(
     ctx,
     img,
-    anchors.right.x + nudge,
-    earY,
+    rightEarX,
+    rightEarY,
     earW,
     earH,
     roll,
     1,
     extra + 0.08,
-    true
+    true,
+    earAnchor
   );
 }
 

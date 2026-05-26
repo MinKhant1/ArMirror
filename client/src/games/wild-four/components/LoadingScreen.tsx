@@ -4,7 +4,7 @@ type Props = { progress: number };
 
 export function LoadingScreen({ progress }: Props) {
   const pct = Math.round(progress * 100);
-  const colors = ['#C9956C', '#D4A03A', '#E05C2A', '#9C7EC4'];
+  const colors = ['#D4A03A', '#F4F0E8'];
 
   return (
     <div className="wild-four__screen wild-four__loading">
