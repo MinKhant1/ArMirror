@@ -81,7 +81,7 @@ export default function MirrorGame() {
         <MirrorRouter key={mirrorKey} theme={theme} onCapture={handleCaptureRef} />
       </main>
 
-      {!isWildFour && (
+      {!isWildFour && !isGalactic && (
         <footer className="mirror-game__footer">
           {gameOver ? (
             <button type="button" className="mirror-game__capture" onClick={handleRestart}>

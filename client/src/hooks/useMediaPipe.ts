@@ -6,14 +6,17 @@ type Tracker = Awaited<ReturnType<typeof createMediaPipeTracker>>;
 export type UseMediaPipeOptions = {
   segmentation?: boolean;
   pose?: boolean;
+  hands?: boolean;
   numFaces?: number;
+  numHands?: number;
 };
 
 export function useMediaPipe(enabled: boolean, options: UseMediaPipeOptions = {}) {
   const trackerRef = useRef<Tracker | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { segmentation = false, pose = false, numFaces = 4 } = options;
+  const { segmentation = false, pose = false, hands = false, numFaces = 4, numHands = 2 } =
+    options;
 
   useEffect(() => {
     if (!enabled) return;
@@ -23,9 +26,11 @@ export function useMediaPipe(enabled: boolean, options: UseMediaPipeOptions = {}
       face: true,
       pose,
       segmentation,
+      hands,
       blendshapes: true,
       faceTransform: true,
       numFaces,
+      numHands,
     })
       .then((tracker) => {
         if (disposed) {
@@ -44,7 +49,7 @@ export function useMediaPipe(enabled: boolean, options: UseMediaPipeOptions = {}
       trackerRef.current?.close();
       trackerRef.current = null;
     };
-  }, [enabled, segmentation, pose, numFaces]);
+  }, [enabled, segmentation, pose, hands, numFaces, numHands]);
 
   const detect = (video: HTMLVideoElement, timestamp: number) =>
     trackerRef.current?.detect(video, timestamp) ?? {};

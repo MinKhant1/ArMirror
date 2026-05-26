@@ -149,22 +149,4 @@ export class HeadCharacterAnimator {
   }
 }
 
-export function drawCaptureCountdown(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  countdown: number | null
-) {
-  if (countdown == null || countdown < 0) return;
-  ctx.save();
-  ctx.font = `bold ${Math.min(w, h) * 0.12}px "Cinzel Decorative", serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.shadowColor = 'rgba(0,0,0,0.5)';
-  ctx.shadowBlur = 12;
-  if (countdown > 0) {
-    ctx.fillText(String(countdown), w / 2, h * 0.12);
-  }
-  ctx.restore();
-}
+export { drawCaptureCountdown } from '../../../utils/drawCaptureCountdown';

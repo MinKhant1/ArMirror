@@ -324,19 +324,43 @@
   margin-top: 0.5rem;
 }
 
-.wild-four__hint--detect {
+.wild-four__hint--detect,
+.wild-four__hint--peace,
+.wild-four__hint--saved {
   position: absolute;
-  bottom: 12%;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
   padding: 0.5rem 1rem;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #f5f0e8;
   font-family: 'Raleway', sans-serif;
   pointer-events: none;
   white-space: nowrap;
+}
+
+.wild-four__hint--detect,
+.wild-four__hint--peace {
+  background: rgba(0, 0, 0, 0.55);
+  color: #f5f0e8;
+}
+
+.wild-four__hint--detect {
+  bottom: 12%;
+}
+
+.wild-four__hint--peace {
+  bottom: 6%;
+  font-size: 0.75rem;
+}
+
+.wild-four__hint--saved {
+  top: 1rem;
+  bottom: auto;
+  z-index: 20;
+  color: #b8f5c8;
+  background: rgba(20, 50, 30, 0.85);
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .wild-four__error-overlay {

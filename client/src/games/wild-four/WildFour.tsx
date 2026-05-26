@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TrackedPlayer } from './utils/filterRenderer';
 import { FACE_STABLE_MS } from './config';
 import { useWebcam } from '../../hooks/useWebcam';
@@ -18,12 +18,12 @@ import { GameCanvas } from './components/GameCanvas';
 import { CAPTURE_COUNTDOWN_SEC, type AnimalId } from './config';
 import { LoadingScreen } from './components/LoadingScreen';
 import { PlayerBadges } from './components/PlayerBadges';
-import { captureGameScreen, generateQrDataUrl } from './utils/photoCapture';
-import {
-  HeadCharacterAnimator,
-  drawCaptureCountdown,
-  type VisibleFace,
-} from './utils/headCharacterAnimations';
+import { captureGameScreen } from './utils/photoCapture';
+import { HeadCharacterAnimator, type VisibleFace } from './utils/headCharacterAnimations';
+import { detectPeaceSign } from '../../utils/peaceSign';
+import { updatePeaceSignHeld } from '../../utils/peaceSignCapture';
+import { drawCaptureCountdown } from '../../utils/drawCaptureCountdown';
+import { savePhotoToDevice } from '../../utils/savePhoto';
 import './wild-four.css';
 
 export const WILD_FOUR_PATH = '/wild-four';
@@ -40,6 +40,10 @@ export default function WildFour() {
   const visibleFacesRef = useRef<VisibleFace[]>([]);
   const headAnimRef = useRef(new HeadCharacterAnimator());
   const rouletteActiveRef = useRef(false);
+  const captureStartedAtRef = useRef(0);
+  const capturingRef = useRef(false);
+  const peaceSignHeldRef = useRef(false);
+  const [photoSaved, setPhotoSaved] = useState(false);
 
   const {
     bindVideo,
@@ -51,7 +55,7 @@ export default function WildFour() {
     retryCamera,
   } = useWebcam();
   const assets = useAnimalAssets();
-  const { detect, ready: faceReady, error: faceError } = useMediaPipe(camReady);
+  const { detect, ready: faceReady, error: faceError } = useMediaPipe(camReady, { hands: true });
   const { processFrame } = usePlayerTracking();
   const { render: renderFilters } = useAnimalFilter();
   const roulette = useRoulette();
@@ -112,32 +116,24 @@ export default function WildFour() {
   }, [assets.ready]);
 
   useEffect(() => {
-    if (gameState !== 'capture' || captureCountdown != null) return;
-    useWildFourStore.getState().setCaptureCountdown(CAPTURE_COUNTDOWN_SEC);
-  }, [gameState, captureCountdown]);
-
-  useEffect(() => {
-    if (gameState !== 'capture' || captureCountdown == null) return;
-    if (captureCountdown <= 0) return;
-    const t = setTimeout(() => {
-      const next = captureCountdown - 1;
-      useWildFourStore.getState().setCaptureCountdown(next > 0 ? next : 0);
-    }, 1000);
-    return () => clearTimeout(t);
-  }, [gameState, captureCountdown]);
-
-  useEffect(() => {
     if (gameState !== 'capture' || captureCountdown !== 0) return;
-    if (!wrapperRef.current) return;
+    if (!wrapperRef.current || capturingRef.current) return;
 
+    capturingRef.current = true;
     (async () => {
-      const url = await captureGameScreen(wrapperRef.current!);
-      const store = useWildFourStore.getState();
-      store.setArtwork(url);
-      await generateQrDataUrl(url);
-      store.setQr(null, Date.now());
-      store.setCaptureCountdown(null);
-      store.setGameState('qr');
+      try {
+        const url = await captureGameScreen(wrapperRef.current!);
+        const store = useWildFourStore.getState();
+        store.setArtwork(url);
+        await savePhotoToDevice(url, 'wild-four');
+        setPhotoSaved(true);
+        setTimeout(() => setPhotoSaved(false), 3000);
+        store.setCaptureCountdown(null);
+        const resumeState = store.playingStartedAt ? 'playing' : 'detecting';
+        store.setGameState(resumeState);
+      } finally {
+        capturingRef.current = false;
+      }
     })();
   }, [gameState, captureCountdown]);
 
@@ -191,6 +187,13 @@ export default function WildFour() {
       let faceResults: ReturnType<typeof detect> = {};
       if (runDetect && videoReady) faceResults = detect(video!, timestamp);
 
+      updatePeaceSignHeld(
+        peaceSignHeldRef,
+        runDetect && videoReady
+          ? detectPeaceSign(faceResults.hands?.landmarks)
+          : null
+      );
+      const peaceSign = peaceSignHeldRef.current;
       const faces = faceResults.face?.faceLandmarks ?? [];
       const blendshapes = faceResults.face?.faceBlendshapes ?? [];
       const matrices = faceResults.face?.facialTransformationMatrixes ?? [];
@@ -208,6 +211,31 @@ export default function WildFour() {
 
       const store = useWildFourStore.getState();
       tickFlow(timestamp, faceCount, startRoulette);
+
+      const canStartPeaceCapture = ['detecting', 'playing', 'group'].includes(store.gameState);
+
+      if (peaceSign && canStartPeaceCapture && store.gameState !== 'capture') {
+        store.setGameState('capture');
+        captureStartedAtRef.current = timestamp;
+        store.setCaptureCountdown(CAPTURE_COUNTDOWN_SEC);
+      } else if (peaceSign && store.gameState === 'capture') {
+        if (store.captureCountdown != null && store.captureCountdown > 0) {
+          const elapsedSec = (timestamp - captureStartedAtRef.current) / 1000;
+          const remaining = Math.max(0, CAPTURE_COUNTDOWN_SEC - Math.floor(elapsedSec));
+          if (remaining !== store.captureCountdown) {
+            store.setCaptureCountdown(remaining);
+          }
+        }
+      } else if (
+        !peaceSign &&
+        store.gameState === 'capture' &&
+        store.captureCountdown != null &&
+        store.captureCountdown > 0
+      ) {
+        store.setCaptureCountdown(null);
+        const resumeState = store.playingStartedAt ? 'playing' : 'detecting';
+        store.setGameState(resumeState);
+      }
 
       if (faceCount > 0) {
         if (!faceStableSinceRef.current) faceStableSinceRef.current = timestamp;
@@ -321,6 +349,12 @@ export default function WildFour() {
         {['detecting', 'playing', 'roulette'].includes(gameState) && <PlayerBadges tracked={[]} />}
         {gameState === 'detecting' && faceReady && assets.ready && players.length > 0 && (
           <p className="wild-four__hint wild-four__hint--detect">Hold still — choosing your animal…</p>
+        )}
+        {['detecting', 'playing', 'group'].includes(gameState) && (
+          <p className="wild-four__hint wild-four__hint--peace">✌️ Peace sign to take a photo</p>
+        )}
+        {photoSaved && (
+          <p className="wild-four__hint wild-four__hint--saved">Photo saved!</p>
         )}
       </div>
 

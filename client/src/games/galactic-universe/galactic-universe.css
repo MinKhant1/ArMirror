@@ -103,6 +103,18 @@
   letter-spacing: 0.04em;
 }
 
+.galactic__hint--peace {
+  bottom: 3.25rem;
+  font-size: 0.8rem;
+}
+
+.galactic__hint--saved {
+  top: 1rem;
+  bottom: auto;
+  color: #9dffb8;
+  background: rgba(10, 40, 20, 0.75);
+}
+
 .galactic__error-overlay {
   position: absolute;
   inset: 0;

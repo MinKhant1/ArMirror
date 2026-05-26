@@ -1,10 +1,5 @@
 import { useEffect, useRef } from 'react';
-import {
-  FREE_PLAY_DURATION_SEC,
-  GROUP_MOMENT_MS,
-  QR_RESET_MS,
-  MAX_PLAYERS,
-} from '../config';
+import { GROUP_MOMENT_MS, QR_RESET_MS, MAX_PLAYERS } from '../config';
 import { useWildFourStore } from '../store/wildFourStore';
 
 export function useGameFlow(assetsReady: boolean) {
@@ -36,10 +31,6 @@ export function useGameFlow(assetsReady: boolean) {
         }, GROUP_MOMENT_MS);
       }
 
-      const elapsed = (timestamp - playingStartedAt) / 1000;
-      if (elapsed >= FREE_PLAY_DURATION_SEC && gameState !== 'capture') {
-        store.setGameState('capture');
-      }
     }
 
     if (gameState === 'qr' && store.qrShownAt && timestamp - store.qrShownAt > QR_RESET_MS) {

@@ -21,10 +21,17 @@ export async function createMediaPipeTracker(options = {}) {
     numFaces = 1,
     numPoses = 1,
     faceTransform = false,
+    hands = false,
+    numHands = 2,
   } = options;
 
-  const { FilesetResolver, FaceLandmarker, PoseLandmarker, ImageSegmenter } =
-    await loadVision();
+  const {
+    FilesetResolver,
+    FaceLandmarker,
+    PoseLandmarker,
+    ImageSegmenter,
+    HandLandmarker,
+  } = await loadVision();
 
   const vision = await FilesetResolver.forVisionTasks(WASM_CDN);
   const tasks = [];
@@ -33,6 +40,7 @@ export async function createMediaPipeTracker(options = {}) {
   let faceLandmarker = null;
   let poseLandmarker = null;
   let imageSegmenter = null;
+  let handLandmarker = null;
 
   if (face) {
     tasks.push(
@@ -66,6 +74,21 @@ export async function createMediaPipeTracker(options = {}) {
     );
   }
 
+  if (hands) {
+    tasks.push(
+      HandLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `${MODEL_CDN}/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+          delegate: 'GPU',
+        },
+        runningMode: 'VIDEO',
+        numHands,
+      }).then((lm) => {
+        handLandmarker = lm;
+      })
+    );
+  }
+
   if (segmentation) {
     tasks.push(
       ImageSegmenter.createFromOptions(vision, {
@@ -89,6 +112,7 @@ export async function createMediaPipeTracker(options = {}) {
     if (faceLandmarker) out.face = faceLandmarker.detectForVideo(video, timestamp);
     if (poseLandmarker) out.pose = poseLandmarker.detectForVideo(video, timestamp);
     if (imageSegmenter) out.segmentation = imageSegmenter.segmentForVideo(video, timestamp);
+    if (handLandmarker) out.hands = handLandmarker.detectForVideo(video, timestamp);
     return out;
   };
 
@@ -96,6 +120,7 @@ export async function createMediaPipeTracker(options = {}) {
     faceLandmarker?.close();
     poseLandmarker?.close();
     imageSegmenter?.close();
+    handLandmarker?.close();
   };
 
   return result;

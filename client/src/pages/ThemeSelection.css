@@ -73,8 +73,8 @@ html:has(.theme-selection) body {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(92vw, 720px);
-  max-height: clamp(64px, 16vh, 180px);
+  max-width: min(94vw, 820px);
+  max-height: clamp(80px, 24vh, 240px);
   margin: 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 0 32px rgba(255, 215, 0, 0.4));
@@ -82,8 +82,8 @@ html:has(.theme-selection) body {
 
 @media (min-width: 900px) {
   .theme-selection__logo-img {
-    max-width: min(68vw, 900px);
-    max-height: clamp(88px, 20vh, 220px);
+    max-width: min(76vw, 960px);
+    max-height: clamp(104px, 28vh, 300px);
   }
 }
 

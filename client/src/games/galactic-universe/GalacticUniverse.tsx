@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWebcam } from '../../hooks/useWebcam';
 import { useMediaPipe } from '../../hooks/useMediaPipe';
 import {
@@ -14,6 +14,11 @@ import { drawGalacticScene } from './utils/galacticScene';
 import { drawAllMasks } from './utils/maskRenderer';
 import { FriendshipAnimator } from './utils/friendshipAnimator';
 import { captureGalacticFrame } from './utils/captureFrame';
+import { CAPTURE_COUNTDOWN_SEC } from './config';
+import { detectPeaceSign } from '../../utils/peaceSign';
+import { tickPeaceCountdown, updatePeaceSignHeld } from '../../utils/peaceSignCapture';
+import { drawCaptureCountdown } from '../../utils/drawCaptureCountdown';
+import { savePhotoToDevice } from '../../utils/savePhoto';
 import './galactic-universe.css';
 
 type GalacticUniverseProps = {
@@ -31,6 +36,11 @@ export default function GalacticUniverse({ onCaptureReady }: GalacticUniversePro
   const lastMaskRef = useRef<ReturnType<typeof getCategoryMask>>(null);
   const flyingRef = useRef(new FlyingSprites());
   const friendshipRef = useRef(new FriendshipAnimator());
+  const captureCountdownRef = useRef<number | null>(null);
+  const captureStartedAtRef = useRef(0);
+  const captureCooldownUntilRef = useRef(0);
+  const peaceSignHeldRef = useRef(false);
+  const [photoSaved, setPhotoSaved] = useState(false);
 
   const {
     bindVideo,
@@ -44,6 +54,7 @@ export default function GalacticUniverse({ onCaptureReady }: GalacticUniversePro
   const assets = useGalacticAssets();
   const { detect, ready: faceReady, error: faceError } = useMediaPipe(camReady, {
     segmentation: true,
+    hands: true,
   });
   const { processFrame } = usePlayerTracking();
 
@@ -119,7 +130,36 @@ export default function GalacticUniverse({ onCaptureReady }: GalacticUniversePro
       const matrices = faceResults.face?.facialTransformationMatrixes ?? [];
       const personMask = lastMaskRef.current;
 
+      updatePeaceSignHeld(
+        peaceSignHeldRef,
+        runDetect && videoReady
+          ? detectPeaceSign(faceResults.hands?.landmarks)
+          : null
+      );
+
       const { tracked } = processFrame(faces, blendshapes, matrices, timestamp, w, h);
+
+      const tick = tickPeaceCountdown({
+        timestamp,
+        peaceHeld: peaceSignHeldRef.current,
+        countdownSec: CAPTURE_COUNTDOWN_SEC,
+        countdown: captureCountdownRef.current,
+        startedAt: captureStartedAtRef.current,
+        cooldownUntil: captureCooldownUntilRef.current,
+      });
+      captureCountdownRef.current = tick.countdown;
+      captureStartedAtRef.current = tick.startedAt;
+      captureCooldownUntilRef.current = tick.cooldownUntil;
+
+      if (tick.shouldCapture) {
+        const dataUrl = captureGalacticFrame(segCanvas, flyCanvas, filterCanvas, fxCanvas);
+        if (dataUrl) {
+          savePhotoToDevice(dataUrl, 'galactic-universe').then(() => {
+            setPhotoSaved(true);
+            setTimeout(() => setPhotoSaved(false), 3000);
+          });
+        }
+      }
 
       const segCtx = segCanvas.getContext('2d')!;
       const flyCtx = flyCanvas.getContext('2d')!;
@@ -157,6 +197,8 @@ export default function GalacticUniverse({ onCaptureReady }: GalacticUniversePro
       } else {
         fxCtx.clearRect(0, 0, w, h);
       }
+
+      drawCaptureCountdown(fxCtx, w, h, captureCountdownRef.current);
     };
 
     rafRef.current = requestAnimationFrame(loop);
@@ -201,8 +243,12 @@ export default function GalacticUniverse({ onCaptureReady }: GalacticUniversePro
           </div>
         )}
         {!loading && (
-          <p className="galactic__hint">Smile to summon the Friendship badge on your head</p>
+          <>
+            <p className="galactic__hint">Smile to summon the Friendship badge on your head</p>
+            <p className="galactic__hint galactic__hint--peace">✌️ Peace sign to take a photo</p>
+          </>
         )}
+        {photoSaved && <p className="galactic__hint galactic__hint--saved">Photo saved!</p>}
       </div>
 
       {(camError || faceError) && (

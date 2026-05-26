@@ -2,6 +2,7 @@ export const ALIEN_MASKS = ['alien1', 'alien2'] as const;
 export type AlienMaskId = (typeof ALIEN_MASKS)[number];
 
 export const SMILE_THRESHOLD = 0.55;
+export const CAPTURE_COUNTDOWN_SEC = 5;
 export const MAX_PLAYERS = 4;
 export const FACE_RETURN_PX = 200;
 
