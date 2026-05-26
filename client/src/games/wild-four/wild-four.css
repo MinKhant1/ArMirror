@@ -1,0 +1,390 @@
+.wild-four {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  background: #06080a;
+  border-radius: 16px;
+  overflow: hidden;
+  font-family: 'Raleway', sans-serif;
+  color: #f5f0e8;
+}
+
+.wild-four__layer,
+.wild-four__stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.wild-four__forest {
+  z-index: 0;
+  /* Drawn into seg canvas only — hide duplicate layer */
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.wild-four__stage {
+  z-index: 1;
+}
+
+.wild-four__video {
+  opacity: 0;
+  pointer-events: none;
+  object-fit: cover;
+}
+
+.wild-four__seg,
+.wild-four__filter,
+.wild-four__fx {
+  object-fit: cover;
+}
+
+.wild-four__seg {
+  z-index: 2;
+}
+
+.wild-four__filter {
+  z-index: 3;
+  pointer-events: none;
+}
+
+.wild-four__fx {
+  z-index: 4;
+  pointer-events: none;
+}
+
+.wild-four__ui {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.wild-four__ui > * {
+  pointer-events: auto;
+}
+
+.wild-four__screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(6, 8, 10, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.wild-four__screen--attract {
+  background: rgba(6, 8, 10, 0.35);
+  pointer-events: none;
+}
+
+.wild-four__title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.2em;
+}
+
+.wild-four__title--lg {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+}
+
+.wild-four__subtitle {
+  font-weight: 300;
+  font-size: 0.95rem;
+  margin: 0.5rem 0;
+  letter-spacing: 0.15em;
+}
+
+.wild-four__progress-track {
+  width: min(320px, 80%);
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.wild-four__progress-fill {
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.wild-four__orbit {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 1.5rem auto;
+}
+
+.wild-four__orbit-emoji {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-size: 2rem;
+  transform: rotate(calc(var(--i) * 90deg)) translateY(-70px);
+  animation: wild-orbit 8s linear infinite;
+  animation-delay: calc(var(--i) * -2s);
+  filter: drop-shadow(0 0 8px var(--color));
+}
+
+@keyframes wild-orbit {
+  to {
+    transform: rotate(calc(var(--i) * 90deg + 360deg)) translateY(-70px);
+  }
+}
+
+.wild-four__badges {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  backdrop-filter: blur(8px);
+  background: rgba(6, 8, 10, 0.35);
+}
+
+.wild-four__badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  transition: box-shadow 0.3s ease;
+}
+
+.wild-four__badge--empty {
+  border-style: dashed;
+  color: #8a8a9a;
+}
+
+.wild-four__roulette {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.wild-four__roulette--locked {
+  animation: wild-shake 0.15s ease 3;
+}
+
+@keyframes wild-shake {
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.wild-four__roulette-cards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.wild-four__roulette-card {
+  width: 100px;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid;
+  text-align: center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0.35;
+  animation: wild-card-bounce 0.6s ease infinite;
+}
+
+.wild-four__roulette-card--active {
+  opacity: 1;
+  transform: scale(1.1);
+  animation: wild-card-slam 0.35s ease;
+}
+
+@keyframes wild-card-bounce {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes wild-card-slam {
+  0% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
+.wild-four__roulette-emoji {
+  font-size: 3rem;
+  display: block;
+}
+
+.wild-four__roulette-label {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+}
+
+.wild-four__roulette-lock {
+  margin-top: 1.5rem;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.2em;
+}
+
+.wild-four__group {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.wild-four__group-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.wild-four__group-title {
+  position: relative;
+  font-size: 2rem;
+  letter-spacing: 0.2em;
+  z-index: 1;
+}
+
+.wild-four__group-parade {
+  position: relative;
+  width: 100%;
+  height: 80px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.wild-four__group-runner {
+  position: absolute;
+  font-size: 2.5rem;
+  animation: wild-run 1.2s ease-in-out forwards;
+  animation-delay: var(--delay);
+  left: -10%;
+}
+
+@keyframes wild-run {
+  to {
+    left: 110%;
+  }
+}
+
+.wild-four__group-sub {
+  position: relative;
+  font-weight: 300;
+  z-index: 1;
+}
+
+.wild-four__capture-ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.wild-four__capture-prompt {
+  font-size: 1.25rem;
+  letter-spacing: 0.2em;
+  opacity: 0.85;
+}
+
+.wild-four__capture-num {
+  font-size: 4.5rem;
+  animation: wild-pulse 0.8s ease;
+}
+
+@keyframes wild-pulse {
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.wild-four__qr-thumb {
+  max-width: 33%;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.wild-four__qr-code {
+  width: 200px;
+  height: 200px;
+}
+
+.wild-four__btn {
+  margin-top: 1rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: 20px;
+  border: 1px solid #f5f0e8;
+  background: transparent;
+  color: #f5f0e8;
+  font-family: 'Raleway', sans-serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.wild-four__btn:hover {
+  background: rgba(245, 240, 232, 0.12);
+}
+
+.wild-four__hint {
+  font-size: 0.7rem;
+  margin-top: 0.5rem;
+}
+
+.wild-four__error-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+  color: #ef5350;
+  background: rgba(2, 8, 4, 0.85);
+  pointer-events: auto;
+}
+
+.wild-four__error-retry {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid rgba(239, 83, 80, 0.6);
+  border-radius: 4px;
+  background: rgba(239, 83, 80, 0.15);
+  color: #fff;
+}
+
+.wild-four__error-retry:hover {
+  background: rgba(239, 83, 80, 0.3);
+}

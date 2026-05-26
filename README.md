@@ -7,8 +7,8 @@ Three interactive AI/AR mirror experiences built with **MERN**, **Three.js**, **
 ### 1. Soul Echo
 Your body leaves ghostly trails — each echo rendered in a different art style (sketch → watercolor → x-ray skeleton → dissolving particles). Wave slowly to see the cascade.
 
-### 2. Four of a Kind
-Four people stand before the mirror — each assigned Fire, Water, Earth, or Lightning by position. Movement and expressions drive elemental particles; after 90 seconds a shareable artwork and QR code appear. No score, no win/lose.
+### 2. Wild Four
+Up to four players get a random animal filter (cat, dog, fox, rabbit) via a roulette spin. Snapchat-style PNG parts track your face; after 60 seconds of play, capture a photo and QR to save.
 
 ### 3. Shatter Game
 Your reflection is glass. Move fast to crack it, hold still to heal. Survive as long as possible before the mirror shatters.
@@ -38,7 +38,7 @@ npm run dev
 | Mirror | Interaction |
 |--------|-------------|
 | Soul Echo | Move body slowly — watch art-style echoes trail behind |
-| Four of a Kind | Move, pose, smile together — elements combine; artwork at 90s |
+| Wild Four | Face roulette assigns animals · filters react to smiles · photo + QR at 60s |
 | Shatter Game | Fast movement cracks mirror · stillness heals · 40 cracks = game over |
 
 ## Project Structure
@@ -46,7 +46,7 @@ npm run dev
 ```
 client/src/
 ├── components/ARMirror/
-│   ├── mirrors/          SmileStrike, FourOfAKind, ShatterGame
+│   ├── mirrors/          SmileStrike, WildFour, ShatterGame
 │   └── shared/           Effects, shaders, utilities
 ├── themes/themes.js      Mirror definitions
 └── pages/                ThemeSelection, MirrorGame

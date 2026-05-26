@@ -15,18 +15,18 @@ export const THEMES = [
     },
   },
   {
-    id: 'four-of-a-kind',
-    mirrorType: 'four-of-a-kind',
-    title: 'FOUR OF A KIND',
-    subtitle: '4-PERSON AR ART MIRROR · PURE VISUAL MAGIC',
-    accent: '#FF4500',
-    secondary: '#7B2FBE',
-    gradient: 'linear-gradient(160deg, #05050F 0%, #1a0a2e 45%, #0d1b2a 100%)',
-    borderGlow: 'rgba(255, 180, 71, 0.45)',
-    icons: ['🔥', '⚡'],
+    id: 'wild-four',
+    mirrorType: 'wild-four',
+    title: 'WILD FOUR',
+    subtitle: 'DISCOVER YOUR ANIMAL · UP TO 4 PLAYERS',
+    accent: '#C9956C',
+    secondary: '#9C7EC4',
+    gradient: 'linear-gradient(160deg, #06080A 0%, #1A3A2A 45%, #0D1F15 100%)',
+    borderGlow: 'rgba(201, 149, 108, 0.5)',
+    icons: ['🐱', '🦊'],
     previewStyle: {
       background:
-        'radial-gradient(circle at 30% 50%, #FF4500 0%, transparent 40%), radial-gradient(circle at 70% 50%, #7B2FBE 0%, #05050F 70%)',
+        'radial-gradient(circle at 25% 50%, #C9956C 0%, transparent 45%), radial-gradient(circle at 75% 50%, #9C7EC4 0%, #06080A 70%)',
     },
   },
   {
@@ -47,6 +47,7 @@ export const THEMES = [
 ];
 
 export function getThemeById(id) {
-  const resolved = id === 'mood-universe' ? 'four-of-a-kind' : id;
+  const resolved =
+    id === 'mood-universe' || id === 'four-of-a-kind' ? 'wild-four' : id;
   return THEMES.find((theme) => theme.id === resolved) ?? THEMES[0];
 }

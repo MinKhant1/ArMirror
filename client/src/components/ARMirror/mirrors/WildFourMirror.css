@@ -1,0 +1,18 @@
+.mirror-game--wild-four .mirror-game__footer {
+  display: none;
+}
+
+.mirror-game--wild-four .mirror-game__theme-sub {
+  font-family: 'Raleway', sans-serif;
+  font-weight: 300;
+}
+
+.mirror-game--wild-four .mirror-game__theme-label {
+  font-family: 'Cinzel Decorative', serif;
+  letter-spacing: 0.2em;
+}
+
+.mirror-game--wild-four .mirror-game__main {
+  display: flex;
+  justify-content: center;
+}

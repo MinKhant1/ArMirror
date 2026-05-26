@@ -30,11 +30,11 @@ export default function ThemeCard({ theme, selected, onSelect }) {
                 <span>👾</span>
               </>
             )}
-            {theme.mirrorType === 'four-of-a-kind' && (
+            {theme.mirrorType === 'wild-four' && (
               <>
-                <span>🔥</span>
-                <span>🌊</span>
-                <span>⚡</span>
+                <span>🐱</span>
+                <span>🐶</span>
+                <span>🦊</span>
               </>
             )}
             {theme.mirrorType === 'shatter-game' && (

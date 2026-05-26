@@ -17,7 +17,7 @@ export default function MirrorGame() {
 
   const isShatter = theme.mirrorType === 'shatter-game';
   const isSmileStrike = theme.mirrorType === 'soul-echo';
-  const isFourOfAKind = theme.mirrorType === 'four-of-a-kind';
+  const isWildFour = theme.mirrorType === 'wild-four';
   const shatterState = useShatterStore((s) => s.gameState);
   const smileState = useSmileStrikeStore((s) => s.gameState);
   const resetShatter = useShatterStore((s) => s.reset);
@@ -83,7 +83,7 @@ export default function MirrorGame() {
         <MirrorRouter key={mirrorKey} theme={theme} onCapture={handleCaptureRef} />
       </main>
 
-      {!isFourOfAKind && (
+      {!isWildFour && (
         <footer className="mirror-game__footer">
           {gameOver ? (
             <button type="button" className="mirror-game__capture" onClick={handleRestart}>

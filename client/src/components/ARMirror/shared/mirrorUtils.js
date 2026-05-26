@@ -169,16 +169,70 @@ export function drawDarkBackground(ctx, width, height, hue = 220) {
   ctx.fillRect(0, 0, width, height);
 }
 
+export function isRecoverableCameraError(err) {
+  if (!err) return false;
+  if (err.recoverable === true) return true;
+  if (err.name === 'AbortError') return true;
+  const msg = String(err.message || err);
+  return /interrupted|removed from the document|play\(\) request was interrupted|not in document/i.test(
+    msg
+  );
+}
+
+async function safePlayVideo(video) {
+  if (!video.isConnected) {
+    const e = new Error('Video element not in document');
+    e.recoverable = true;
+    throw e;
+  }
+  try {
+    await video.play();
+  } catch (err) {
+    if (isRecoverableCameraError(err)) {
+      const e = new Error(err.message || 'Video play interrupted');
+      e.recoverable = true;
+      throw e;
+    }
+    throw err;
+  }
+}
+
 export async function initCamera(video, ideal = { width: 1280, height: 720 }) {
+  if (!video?.isConnected) {
+    const e = new Error('Video element not in document');
+    e.recoverable = true;
+    throw e;
+  }
+
   const stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: 'user', width: { ideal: ideal.width }, height: { ideal: ideal.height } },
     audio: false,
   });
-  video.srcObject = stream;
-  await video.play();
-  return {
-    width: video.videoWidth || ideal.width,
-    height: video.videoHeight || ideal.height,
-    stop: () => stream.getTracks().forEach((t) => t.stop()),
-  };
+
+  try {
+    if (!video.isConnected) {
+      const e = new Error('Video element removed before camera start');
+      e.recoverable = true;
+      throw e;
+    }
+    video.srcObject = stream;
+    await safePlayVideo(video);
+    return {
+      width: video.videoWidth || ideal.width,
+      height: video.videoHeight || ideal.height,
+      stop: () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (video.srcObject === stream) video.srcObject = null;
+      },
+    };
+  } catch (err) {
+    stream.getTracks().forEach((t) => t.stop());
+    if (video.srcObject === stream) video.srcObject = null;
+    if (isRecoverableCameraError(err)) {
+      const e = new Error(err.message || 'Camera start interrupted');
+      e.recoverable = true;
+      throw e;
+    }
+    throw err;
+  }
 }

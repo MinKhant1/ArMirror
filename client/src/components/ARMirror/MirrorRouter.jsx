@@ -1,12 +1,13 @@
 import SmileStrikeMirror from './mirrors/SmileStrikeMirror.jsx';
-import FourOfAKindMirror from './mirrors/FourOfAKindMirror.jsx';
+import WildFourMirror from './mirrors/WildFourMirror.jsx';
 import ShatterGameMirror from './mirrors/ShatterGameMirror.jsx';
 
 const MIRROR_MAP = {
   'soul-echo': SmileStrikeMirror,
   'smile-strike': SmileStrikeMirror,
-  'four-of-a-kind': FourOfAKindMirror,
-  'mood-universe': FourOfAKindMirror,
+  'wild-four': WildFourMirror,
+  'four-of-a-kind': WildFourMirror,
+  'mood-universe': WildFourMirror,
   'shatter-game': ShatterGameMirror,
 };
 
