@@ -59,7 +59,10 @@ export const useWildFourStore = create<WildFourState>((set, get) => ({
   qrDataUrl: null,
   qrShownAt: null,
 
-  setGameState: (gameState) => set({ gameState }),
+  setGameState: (gameState) => {
+    if (get().gameState === gameState) return;
+    set({ gameState });
+  },
 
   initAnimalPool: () =>
     set({
@@ -84,7 +87,26 @@ export const useWildFourStore = create<WildFourState>((set, get) => ({
     }));
   },
 
-  setPlayers: (players) => set({ players }),
+  setPlayers: (players) => {
+    const prev = get().players;
+    if (prev === players) return;
+    if (
+      prev.length === players.length &&
+      prev.every((p, i) => {
+        const n = players[i];
+        return (
+          n &&
+          p.slot === n.slot &&
+          p.animal === n.animal &&
+          p.centerX === n.centerX &&
+          p.centerY === n.centerY
+        );
+      })
+    ) {
+      return;
+    }
+    set({ players });
+  },
 
   setRoulette: (rouletteSlot, winner = null) =>
     set({ rouletteSlot, rouletteWinner: winner }),
@@ -101,6 +123,6 @@ export const useWildFourStore = create<WildFourState>((set, get) => ({
 
   resetGame: () => {
     get().initAnimalPool();
-    set({ gameState: 'attract' });
+    set({ gameState: 'detecting' });
   },
 }));

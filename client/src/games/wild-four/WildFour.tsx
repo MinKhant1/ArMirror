@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { TrackedPlayer } from './utils/filterRenderer';
 import { FACE_STABLE_MS } from './config';
 import { useWebcam } from '../../hooks/useWebcam';
@@ -13,15 +13,13 @@ import { useGameFlow } from './hooks/useGameFlow';
 import { useWildFourStore } from './store/wildFourStore';
 import { ForestBackground, type ForestHandle } from './components/ForestBackground';
 import { GameCanvas } from './components/GameCanvas';
-import { LoadingScreen } from './components/LoadingScreen';
-import { AttractScreen } from './components/AttractScreen';
-import { RouletteOverlay } from './components/RouletteOverlay';
-import { PlayerBadges } from './components/PlayerBadges';
-import { GroupMoment } from './components/GroupMoment';
-import { CaptureScreen } from './components/CaptureScreen';
-import { QrScreen } from './components/QrScreen';
 import { CAPTURE_COUNTDOWN_SEC, MAX_PLAYERS, type AnimalId } from './config';
 import { captureGameScreen, generateQrDataUrl } from './utils/photoCapture';
+import {
+  HeadCharacterAnimator,
+  drawCaptureCountdown,
+  type VisibleFace,
+} from './utils/headCharacterAnimations';
 import './wild-four.css';
 
 export const WILD_FOUR_PATH = '/wild-four';
@@ -34,11 +32,16 @@ export default function WildFour() {
   const fxRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef(0);
   const lastDetectRef = useRef(0);
-  const groupStartRef = useRef(0);
-  const rouletteActiveRef = useRef(false);
   const faceStableSinceRef = useRef<number | null>(null);
   const trackedRef = useRef<TrackedPlayer[]>([]);
-  const [uiFrame, setUiFrame] = useState(0);
+  const visibleFacesRef = useRef<VisibleFace[]>([]);
+  const headAnimRef = useRef(new HeadCharacterAnimator());
+  const rouletteActiveRef = useRef(false);
+  const rouletteUiRef = useRef({
+    slot: null as number | null,
+    displayAnimal: null as AnimalId | null,
+    locked: false,
+  });
 
   const {
     bindVideo,
@@ -50,23 +53,27 @@ export default function WildFour() {
     retryCamera,
   } = useWebcam();
   const assets = useAnimalAssets();
-  const mpReady = assets.ready && camReady;
-  const { detect, ready: faceReady, error: faceError } = useMediaPipe(mpReady);
-  const { segment, ready: segReady } = useSegmentation(mpReady);
+  const { detect, ready: faceReady, error: faceError } = useMediaPipe(camReady);
+  const { segment, ready: segReady } = useSegmentation(camReady);
   const { processFrame } = usePlayerTracking(width, height);
   const { render: renderFilters } = useAnimalFilter();
   const roulette = useRoulette();
   const { tick: tickFlow } = useGameFlow(assets.ready);
 
   const gameState = useWildFourStore((s) => s.gameState);
-  const players = useWildFourStore((s) => s.players);
-  const availableAnimals = useWildFourStore((s) => s.availableAnimals);
   const captureCountdown = useWildFourStore((s) => s.captureCountdown);
-  const artworkUrl = useWildFourStore((s) => s.artworkUrl);
-  const qrDataUrl = useWildFourStore((s) => s.qrDataUrl);
-  const qrShownAt = useWildFourStore((s) => s.qrShownAt);
 
-  const assigned = players.map((p) => p.animal).filter(Boolean) as AnimalId[];
+  rouletteUiRef.current = {
+    slot: useWildFourStore.getState().rouletteSlot,
+    displayAnimal: roulette.displayAnimal,
+    locked: roulette.locked,
+  };
+
+  const players = useWildFourStore((s) => s.players);
+  const assigned = useMemo(
+    () => players.map((p) => p.animal).filter(Boolean) as AnimalId[],
+    [players]
+  );
   const fullBloom = assigned.length === MAX_PLAYERS;
 
   const onRouletteComplete = useCallback((animal: AnimalId, slot: number) => {
@@ -96,12 +103,10 @@ export default function WildFour() {
   }, []);
 
   useEffect(() => {
-    if (!assets.ready) {
-      useWildFourStore.getState().setGameState('loading');
-      return;
-    }
-    if (useWildFourStore.getState().gameState === 'loading') {
-      useWildFourStore.getState().setGameState('attract');
+    if (!assets.ready) return;
+    const store = useWildFourStore.getState();
+    if (store.gameState === 'loading') {
+      store.setGameState('detecting');
     }
   }, [assets.ready]);
 
@@ -126,29 +131,20 @@ export default function WildFour() {
 
     (async () => {
       const url = await captureGameScreen(wrapperRef.current!);
-      useWildFourStore.getState().setArtwork(url);
-      const qr = await generateQrDataUrl(url);
-      useWildFourStore.getState().setQr(qr);
-      useWildFourStore.getState().setGameState('qr');
-      useWildFourStore.getState().setCaptureCountdown(null);
+      const store = useWildFourStore.getState();
+      store.setArtwork(url);
+      await generateQrDataUrl(url);
+      store.setQr(null, Date.now());
+      store.setCaptureCountdown(null);
+      store.setGameState('qr');
     })();
   }, [gameState, captureCountdown]);
 
   useEffect(() => {
-    if (gameState === 'group' && !groupStartRef.current) {
-      groupStartRef.current = performance.now();
-    }
-    if (gameState !== 'group') groupStartRef.current = 0;
-  }, [gameState]);
-
-  useEffect(() => {
-    if (!camReady) return;
-
-    const video = videoRef.current;
     const segCanvas = segRef.current;
     const filterCanvas = filterRef.current;
     const fxCanvas = fxRef.current;
-    if (!video || !segCanvas || !filterCanvas || !fxCanvas) return;
+    if (!segCanvas || !filterCanvas || !fxCanvas) return;
 
     let disposed = false;
     let frame = 0;
@@ -156,10 +152,10 @@ export default function WildFour() {
     const loop = (timestamp: number) => {
       if (disposed) return;
       rafRef.current = requestAnimationFrame(loop);
-      if (video.readyState < 2) return;
 
-      const displayW = segCanvas.clientWidth || width;
-      const displayH = segCanvas.clientHeight || height;
+      const video = videoRef.current;
+      const displayW = Math.max(2, Math.round(segCanvas.clientWidth || width));
+      const displayH = Math.max(2, Math.round(segCanvas.clientHeight || height));
       if (segCanvas.width !== displayW || segCanvas.height !== displayH) {
         segCanvas.width = displayW;
         segCanvas.height = displayH;
@@ -175,22 +171,24 @@ export default function WildFour() {
       if (runDetect) lastDetectRef.current = timestamp;
 
       let faceResults: ReturnType<typeof detect> = {};
-      if (runDetect) faceResults = detect(video, timestamp);
+      const videoReady = Boolean(video && video.readyState >= 2);
+      if (runDetect && videoReady) faceResults = detect(video!, timestamp);
 
       const faces = faceResults.face?.faceLandmarks ?? [];
       const blendshapes = faceResults.face?.faceBlendshapes ?? [];
       const matrices = faceResults.face?.facialTransformationMatrixes ?? [];
 
-      const mask = segReady && mpReady ? segment(video, timestamp) : null;
+      const mask =
+        camReady && videoReady && segReady ? segment(video!, timestamp) : null;
 
-      const { tracked, faceCount, needsRoulette } = processFrame(
+      const { tracked, visibleFaces, faceCount, needsRoulette } = processFrame(
         faces,
         blendshapes,
         matrices,
         timestamp
       );
       trackedRef.current = tracked;
-      if (frame % 8 === 0) setUiFrame((f) => f + 1);
+      visibleFacesRef.current = visibleFaces;
 
       const store = useWildFourStore.getState();
       tickFlow(timestamp, faceCount, startRoulette);
@@ -216,8 +214,6 @@ export default function WildFour() {
         if (unassigned) startRoulette(unassigned.slot);
       }
 
-      forestRef.current?.draw(timestamp);
-
       const segCtx = segCanvas.getContext('2d')!;
       const filterCtx = filterCanvas.getContext('2d')!;
       const fxCtx = fxCanvas.getContext('2d')!;
@@ -225,11 +221,26 @@ export default function WildFour() {
       const h = segCanvas.height;
 
       segCtx.clearRect(0, 0, w, h);
+      forestRef.current?.draw(timestamp);
       const forestCanvas = forestRef.current?.getCanvas() ?? null;
-      drawWildFourFrame(segCtx, video, forestCanvas, mask, w, h);
+
+      if (camReady && videoReady && video) {
+        drawWildFourFrame(segCtx, video, forestCanvas, mask, w, h);
+      } else if (forestCanvas?.width) {
+        segCtx.drawImage(forestCanvas, 0, 0, w, h);
+      } else {
+        const g = segCtx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, '#1a3a2a');
+        g.addColorStop(1, '#0d1f15');
+        segCtx.fillStyle = g;
+        segCtx.fillRect(0, 0, w, h);
+      }
 
       filterCtx.clearRect(0, 0, w, h);
-      if (['playing', 'group', 'capture'].includes(store.gameState)) {
+      if (
+        assets.ready &&
+        ['detecting', 'playing', 'group', 'capture', 'roulette'].includes(store.gameState)
+      ) {
         renderFilters(
           filterCtx,
           assets.imagesRef.current,
@@ -241,27 +252,20 @@ export default function WildFour() {
       }
 
       fxCtx.clearRect(0, 0, w, h);
-      if (store.gameState === 'group' || fullBloom) {
-        tracked.forEach((p) => {
-          const g = fxCtx.createRadialGradient(
-            p.faceCenterX,
-            p.faceCenterY,
-            10,
-            p.faceCenterX,
-            p.faceCenterY,
-            p.faceWidth
-          );
-          const color = useWildFourStore
-            .getState()
-            .players.find((pl) => pl.slot === p.slot)?.animal;
-          if (!color) return;
-          g.addColorStop(0, 'rgba(255,255,255,0.2)');
-          g.addColorStop(1, 'transparent');
-          fxCtx.fillStyle = g;
-          fxCtx.beginPath();
-          fxCtx.arc(p.faceCenterX, p.faceCenterY, p.faceWidth * 0.9, 0, Math.PI * 2);
-          fxCtx.fill();
-        });
+      const showHeadChars = !['loading'].includes(store.gameState);
+      if (showHeadChars && visibleFaces.length > 0) {
+        headAnimRef.current.draw(
+          fxCtx,
+          visibleFaces,
+          w,
+          h,
+          timestamp,
+          store.gameState === 'roulette' ? rouletteUiRef.current : undefined
+        );
+      }
+
+      if (store.gameState === 'capture') {
+        drawCaptureCountdown(fxCtx, w, h, store.captureCountdown);
       }
     };
 
@@ -271,9 +275,8 @@ export default function WildFour() {
       cancelAnimationFrame(rafRef.current);
     };
   }, [
-    mpReady,
-    faceReady,
     camReady,
+    faceReady,
     segReady,
     width,
     height,
@@ -284,14 +287,9 @@ export default function WildFour() {
     startRoulette,
     renderFilters,
     assets.imagesRef,
-    fullBloom,
-    videoRef,
     assets.ready,
+    videoRef,
   ]);
-
-  const groupProgress = groupStartRef.current
-    ? Math.min(1, (performance.now() - groupStartRef.current) / 4000)
-    : 0;
 
   return (
     <div className="wild-four" ref={wrapperRef}>
@@ -319,32 +317,6 @@ export default function WildFour() {
           )}
         </div>
       )}
-
-      <div className="wild-four__ui">
-        {gameState === 'loading' && <LoadingScreen progress={assets.progress} />}
-        {gameState === 'attract' && <AttractScreen />}
-        {gameState === 'roulette' && (
-          <RouletteOverlay
-            displayAnimal={roulette.displayAnimal}
-            pool={availableAnimals}
-            phase={roulette.phase}
-            locked={roulette.locked}
-          />
-        )}
-        {['playing', 'group', 'capture'].includes(gameState) && (
-          <PlayerBadges tracked={trackedRef.current} key={uiFrame} />
-        )}
-        <GroupMoment active={gameState === 'group'} progress={groupProgress} />
-        {gameState === 'capture' && <CaptureScreen countdown={captureCountdown} />}
-        {gameState === 'qr' && (
-          <QrScreen
-            artworkUrl={artworkUrl}
-            qrDataUrl={qrDataUrl}
-            qrShownAt={qrShownAt}
-            onReset={() => useWildFourStore.getState().resetGame()}
-          />
-        )}
-      </div>
     </div>
   );
 }

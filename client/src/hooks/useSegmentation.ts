@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createMediaPipeTracker } from '../components/ARMirror/mediaPipeTracker.js';
-import { getCategoryMask } from '../components/ARMirror/shared/mirrorUtils.js';
+import { getPersonSegmentationMask } from '../components/ARMirror/shared/mirrorUtils.js';
 
 type Tracker = Awaited<ReturnType<typeof createMediaPipeTracker>>;
 
@@ -36,7 +36,7 @@ export function useSegmentation(enabled: boolean) {
 
   const segment = (video: HTMLVideoElement, timestamp: number) => {
     const results = trackerRef.current?.detect(video, timestamp);
-    return getCategoryMask(results?.segmentation ?? null);
+    return getPersonSegmentationMask(results?.segmentation ?? null);
   };
 
   return { segment, ready };

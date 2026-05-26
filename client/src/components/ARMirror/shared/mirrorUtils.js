@@ -49,6 +49,15 @@ export function getCategoryMask(segmentation) {
   return segmentation?.categoryMask ?? null;
 }
 
+/** Category + confidence masks for smoother person cutouts. */
+export function getPersonSegmentationMask(segmentation) {
+  if (!segmentation) return null;
+  const confidence = segmentation.confidenceMasks?.[0] ?? null;
+  const category = segmentation.categoryMask ?? null;
+  if (!confidence && !category) return null;
+  return { confidence, category };
+}
+
 export function parseMask(mask) {
   if (!mask) return null;
   return {

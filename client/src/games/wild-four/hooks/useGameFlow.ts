@@ -14,22 +14,21 @@ export function useGameFlow(assetsReady: boolean) {
     if (!assetsReady || initRef.current) return;
     initRef.current = true;
     useWildFourStore.getState().initAnimalPool();
-    useWildFourStore.getState().setGameState('attract');
+    useWildFourStore.getState().setGameState('detecting');
   }, [assetsReady]);
 
   const tick = (timestamp: number, faceCount: number, onStartRoulette: (slot: number) => void) => {
     const store = useWildFourStore.getState();
-    const { gameState, players, availableAnimals, playingStartedAt, groupMomentPlayed } =
-      store;
+    const { gameState, players, playingStartedAt, groupMomentPlayed } = store;
 
-    if (gameState === 'attract' && faceCount > 0) {
-      store.setGameState('detecting');
+    if (['attract', 'loading'].includes(gameState) && faceCount > 0) {
+      if (gameState !== 'detecting') store.setGameState('detecting');
     }
 
     if (gameState === 'playing' && playingStartedAt) {
       const assigned = players.filter((p) => p.animal).length;
       if (assigned === MAX_PLAYERS && !groupMomentPlayed) {
-        store.setGameState('group');
+        if (gameState !== 'group') store.setGameState('group');
         store.setGroupMomentPlayed(true);
         setTimeout(() => {
           const s = useWildFourStore.getState();
@@ -38,13 +37,17 @@ export function useGameFlow(assetsReady: boolean) {
       }
 
       const elapsed = (timestamp - playingStartedAt) / 1000;
-      if (elapsed >= FREE_PLAY_DURATION_SEC) {
+      if (elapsed >= FREE_PLAY_DURATION_SEC && gameState !== 'capture') {
         store.setGameState('capture');
       }
     }
 
     if (gameState === 'qr' && store.qrShownAt && timestamp - store.qrShownAt > QR_RESET_MS) {
       store.resetGame();
+    }
+
+    if (gameState === 'capture' && store.artworkUrl && store.qrShownAt) {
+      if (timestamp - store.qrShownAt > QR_RESET_MS) store.resetGame();
     }
   };
 

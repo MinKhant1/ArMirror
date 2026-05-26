@@ -14,9 +14,27 @@ import {
   mirrorX,
 } from '../utils/landmarkHelpers';
 import type { TrackedPlayer } from '../utils/filterRenderer';
+import type { VisibleFace } from '../utils/headCharacterAnimations';
 import { useWildFourStore, type PlayerSlot } from '../store/wildFourStore';
 
 type Landmark = { x: number; y: number; z?: number };
+
+function playersChanged(next: PlayerSlot[], prev: PlayerSlot[]) {
+  if (next.length !== prev.length) return true;
+  for (const n of next) {
+    const p = prev.find((x) => x.slot === n.slot);
+    if (!p) return true;
+    if (
+      p.animal !== n.animal ||
+      p.centerX !== n.centerX ||
+      p.centerY !== n.centerY ||
+      Math.abs(p.lastSeen - n.lastSeen) > 50
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export function usePlayerTracking(width: number, height: number) {
   const prevCentersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -113,30 +131,47 @@ export function usePlayerTracking(width: number, height: number) {
     players = players.filter((pl) => packets.some((p) => p.slot === pl.slot));
 
     const tracked: TrackedPlayer[] = [];
+    const visibleFaces: VisibleFace[] = [];
+
     for (const p of packets) {
-      const assigned = players.find((pl) => pl.slot === p.slot)?.animal;
-      if (!assigned) continue;
+      const assigned = players.find((pl) => pl.slot === p.slot)?.animal ?? null;
       const smile =
         ((p.blendshapes.mouthSmileLeft ?? 0) + (p.blendshapes.mouthSmileRight ?? 0)) / 2;
       const surprise =
         ((p.blendshapes.eyeWideLeft ?? 0) + (p.blendshapes.eyeWideRight ?? 0)) / 2;
       const { roll } = extractHeadAngles(p.matrix);
+      const faceWidth = distLm(
+        p.landmarks[234] as Landmark,
+        p.landmarks[454] as Landmark,
+        width,
+        height
+      );
+      const faceHeight = distLm(
+        p.landmarks[10] as Landmark,
+        p.landmarks[152] as Landmark,
+        width,
+        height
+      );
+
+      visibleFaces.push({
+        slot: p.slot,
+        animal: assigned,
+        landmarks: p.landmarks as VisibleFace['landmarks'],
+        faceWidth,
+        faceHeight,
+        faceCenterX: p.centerX,
+        faceCenterY: p.centerY,
+        headRoll: roll,
+      });
+
+      if (!assigned) continue;
+
       tracked.push({
         slot: p.slot,
         animal: assigned as AnimalId,
         landmarks: p.landmarks as TrackedPlayer['landmarks'],
-        faceWidth: distLm(
-          p.landmarks[234] as Landmark,
-          p.landmarks[454] as Landmark,
-          width,
-          height
-        ),
-        faceHeight: distLm(
-          p.landmarks[10] as Landmark,
-          p.landmarks[152] as Landmark,
-          width,
-          height
-        ),
+        faceWidth,
+        faceHeight,
         faceCenterX: p.centerX,
         faceCenterY: p.centerY,
         headRoll: roll,
@@ -147,10 +182,13 @@ export function usePlayerTracking(width: number, height: number) {
       });
     }
 
-    if (players.length) store.setPlayers(players);
+    if (playersChanged(players, store.players)) {
+      store.setPlayers(players);
+    }
 
     return {
       tracked,
+      visibleFaces,
       faceCount: packets.length,
       needsRoulette: players.some((pl) => !pl.animal),
     };

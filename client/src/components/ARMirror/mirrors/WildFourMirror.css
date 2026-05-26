@@ -1,3 +1,7 @@
+.mirror-game--wild-four {
+  min-height: 100vh;
+}
+
 .mirror-game--wild-four .mirror-game__footer {
   display: none;
 }
@@ -15,4 +19,11 @@
 .mirror-game--wild-four .mirror-game__main {
   display: flex;
   justify-content: center;
+  align-items: center;
+  min-height: 0;
+  flex: 1;
+}
+
+.mirror-game--wild-four .wild-four {
+  width: 100%;
 }
