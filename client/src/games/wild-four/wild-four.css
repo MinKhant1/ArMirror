@@ -19,13 +19,6 @@
   height: 100%;
 }
 
-.wild-four__forest {
-  z-index: 0;
-  /* Drawn into seg canvas only — hide duplicate layer */
-  visibility: hidden;
-  pointer-events: none;
-}
-
 .wild-four__stage {
   z-index: 1;
 }
