@@ -1,4 +1,4 @@
-export const ANIMALS = ['dog', 'cow'] as const;
+export const ANIMALS = ['dog', 'cow', 'coala'] as const;
 export type AnimalId = (typeof ANIMALS)[number];
 
 export type AnimalConfig = {
@@ -38,6 +38,15 @@ export const ANIMAL_CONFIG: Record<AnimalId, AnimalConfig> = {
     emoji: '🐮',
     parts: ['ear', 'nose', 'horn-left', 'horn-right'],
     idleAnimation: 'hornBop',
+  },
+  coala: {
+    id: 'coala',
+    color: '#8B939C',
+    label: 'KOALA',
+    emoji: '🐨',
+    parts: ['ear-left', 'ear-right', 'nose'],
+    idleAnimation: 'earTwitch',
+    smileReaction: 'earsPerk',
   },
 };
 
@@ -79,6 +88,9 @@ export const ASSET_PATHS: Record<string, string> = {
   'cow/nose': '/assets/animal-kingdom/cow/mouth.png',
   'cow/horn-left': '/assets/animal-kingdom/cow/left-horn.png',
   'cow/horn-right': '/assets/animal-kingdom/cow/right-horn.png',
+  'coala/ear-left': '/assets/animal-kingdom/coala/left-ear.png',
+  'coala/ear-right': '/assets/animal-kingdom/coala/right-ear.png',
+  'coala/nose': '/assets/animal-kingdom/coala/nose.png',
 };
 
 export const ASSET_KEYS = Object.keys(ASSET_PATHS);

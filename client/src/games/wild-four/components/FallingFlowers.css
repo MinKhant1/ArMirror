@@ -1,0 +1,49 @@
+.wild-four-falling-flowers {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wild-four-falling-flowers__petal {
+  position: absolute;
+  top: -8vh;
+  left: var(--left);
+  width: var(--size);
+  height: auto;
+  opacity: 0;
+  animation: wild-four-flower-fall var(--duration) linear infinite;
+  animation-delay: var(--delay);
+  will-change: transform, opacity;
+}
+
+@keyframes wild-four-flower-fall {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(var(--rot-start));
+  }
+  8% {
+    opacity: 0.95;
+  }
+  25% {
+    transform: translate(var(--drift-mid), 28vh) rotate(var(--rot-mid));
+  }
+  50% {
+    transform: translate(calc(var(--drift) * 0.55), 52vh) rotate(var(--rot-end));
+  }
+  75% {
+    opacity: 0.9;
+    transform: translate(calc(var(--drift) * 0.85), 78vh) rotate(calc(var(--rot-end) + 12deg));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), 112vh) rotate(var(--rot-end));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wild-four-falling-flowers {
+    display: none;
+  }
+}

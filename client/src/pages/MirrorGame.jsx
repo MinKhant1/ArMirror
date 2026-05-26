@@ -2,8 +2,8 @@ import { useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getThemeById } from '../themes/themes.js';
 import MirrorRouter from '../components/ARMirror/MirrorRouter.jsx';
+import { BorderAccessories } from '../games/wild-four/components/BorderAccessories';
 import { useShatterStore } from '../components/ARMirror/mirrors/ShatterGameMirror.jsx';
-import { useSmileStrikeStore } from '../components/ARMirror/mirrors/SmileStrikeMirror.jsx';
 import './MirrorGame.css';
 
 export default function MirrorGame() {
@@ -16,15 +16,12 @@ export default function MirrorGame() {
   const [mirrorKey, setMirrorKey] = useState(0);
 
   const isShatter = theme.mirrorType === 'shatter-game';
-  const isSmileStrike = theme.mirrorType === 'soul-echo';
+  const isGalactic = theme.mirrorType === 'galactic-universe';
   const isWildFour = theme.mirrorType === 'wild-four';
   const shatterState = useShatterStore((s) => s.gameState);
-  const smileState = useSmileStrikeStore((s) => s.gameState);
   const resetShatter = useShatterStore((s) => s.reset);
-  const resetSmile = useSmileStrikeStore((s) => s.reset);
 
-  const gameOver =
-    (isShatter && shatterState === 'shattered') || (isSmileStrike && smileState === 'over');
+  const gameOver = isShatter && shatterState === 'shattered';
 
   const handleCaptureRef = useCallback((captureFn) => {
     captureRef.current = captureFn;
@@ -58,7 +55,6 @@ export default function MirrorGame() {
 
   const handleRestart = () => {
     if (isShatter) resetShatter();
-    if (isSmileStrike) resetSmile();
     setMirrorKey((k) => k + 1);
   };
 
@@ -68,6 +64,8 @@ export default function MirrorGame() {
       style={{ '--accent': theme.accent, '--secondary': theme.secondary }}
     >
       <div className="mirror-game__bg" aria-hidden="true" />
+
+      {isWildFour && <BorderAccessories />}
 
       <header className="mirror-game__header">
         <button type="button" className="mirror-game__back" onClick={() => navigate('/')}>
@@ -100,7 +98,7 @@ export default function MirrorGame() {
                 ? 'Saving…'
                 : saved
                   ? 'Photo Saved!'
-                  : isSmileStrike || isShatter
+                  : isGalactic || isShatter
                     ? 'Capture Moment'
                     : 'Take Photo'}
             </button>

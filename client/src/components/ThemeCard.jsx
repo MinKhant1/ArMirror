@@ -11,13 +11,15 @@ export default function ThemeCard({ theme, selected, onSelect }) {
         '--border-glow': theme.borderGlow,
       }}
     >
-      <img
-        src={theme.cardImage}
-        alt={theme.title}
-        className="theme-card__image"
-        draggable={false}
-      />
-      {selected && <span className="theme-card__check">✓</span>}
+      <div className="theme-card__media">
+        <img
+          src={theme.cardImage}
+          alt={theme.title}
+          className="theme-card__image"
+          draggable={false}
+        />
+        {selected && <span className="theme-card__check">✓</span>}
+      </div>
     </button>
   );
 }

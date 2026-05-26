@@ -4,12 +4,12 @@ import powerRangerImg from '../components/site/power-ranger.png';
 
 export const THEMES = [
   {
-    id: 'soul-echo',
-    mirrorType: 'soul-echo',
-    title: 'SMILE STRIKE',
-    subtitle: 'SMILE TO SHOOT · DEFEND WITH YOUR CREW',
+    id: 'galactic-universe',
+    mirrorType: 'galactic-universe',
+    title: 'GALACTIC UNIVERSE',
+    subtitle: 'WEAR YOUR HELMET · SMILE FOR FRIENDSHIP',
     accent: '#00e5ff',
-    secondary: '#ff4081',
+    secondary: '#7c4dff',
     borderGlow: 'rgba(0, 229, 255, 0.55)',
     cardImage: galaticImg,
   },
@@ -37,6 +37,10 @@ export const THEMES = [
 
 export function getThemeById(id) {
   const resolved =
-    id === 'mood-universe' || id === 'four-of-a-kind' ? 'wild-four' : id;
+    id === 'mood-universe' || id === 'four-of-a-kind'
+      ? 'wild-four'
+      : id === 'soul-echo' || id === 'smile-strike'
+        ? 'galactic-universe'
+        : id;
   return THEMES.find((theme) => theme.id === resolved) ?? THEMES[0];
 }

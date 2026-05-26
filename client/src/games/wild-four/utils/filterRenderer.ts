@@ -70,6 +70,9 @@ export function computeAnimationState(
     next.earSwing = Math.sin(t * 1.2) * ((amp * Math.PI) / 180);
     next.headTiltBoost += (Math.abs(player.headRoll) > 0.15 ? 1 : -next.headTiltBoost) * 0.15;
   }
+  if (animal === 'coala') {
+    next.earTwitch = Math.sin(t * 1.5) * ((6 * Math.PI) / 180);
+  }
   if (player.isSmiling) next.earsPerk = Math.min(1, next.earsPerk + 0.08);
   else next.earsPerk *= 0.92;
 
@@ -135,7 +138,12 @@ export function drawAnimalAccessories(
   const nose = images.get(`${player.animal}/nose`);
   if (nose && l4) {
     const pos = lmToPx(l4, width, height);
-    const nw = fw * 0.28;
+    const noseScale: Record<AnimalId, number> = {
+      dog: 0.28,
+      cow: 0.28,
+      coala: 1,
+    };
+    const nw = fw * (noseScale[player.animal] ?? 0.28);
     drawPart(ctx, nose, pos.x, pos.y, nw, nw * (nose.height / nose.width), roll);
   }
 
@@ -158,6 +166,62 @@ export function drawAnimalEars(
   const fw = player.faceWidth;
 
   const animal = player.animal;
+
+  let anchors = earAnchorPointsLm(lm, width, height, fw);
+  if (!anchors) return;
+
+  if (animal === 'coala') {
+    const earL = images.get('coala/ear-left');
+    const earR = images.get('coala/ear-right');
+    if (!earL && !earR) return;
+
+    const earW = fw * 1.5;
+    const earHL =
+      earL && (earL.naturalWidth || earL.width)
+        ? earW * ((earL.naturalHeight || earL.height) / (earL.naturalWidth || earL.width))
+        : earW;
+    const earHR =
+      earR && (earR.naturalWidth || earR.width)
+        ? earW * ((earR.naturalHeight || earR.height) / (earR.naturalWidth || earR.width))
+        : earW;
+
+    const earY = anchors.left.y - Math.max(earHL, earHR) * 0.42;
+    const nudge = fw * 0.04;
+    const extra = anim.earTwitch + anim.earsPerk * 0.05;
+
+    if (earL) {
+      drawPart(
+        ctx,
+        earL,
+        anchors.left.x - nudge,
+        earY,
+        earW,
+        earHL,
+        roll,
+        1,
+        extra - 0.05,
+        false,
+        'center'
+      );
+    }
+    if (earR) {
+      drawPart(
+        ctx,
+        earR,
+        anchors.right.x + nudge,
+        earY,
+        earW,
+        earHR,
+        roll,
+        1,
+        extra + 0.05,
+        false,
+        'center'
+      );
+    }
+    return;
+  }
+
   const img = images.get(`${animal}/ear`);
   if (!img) return;
 
@@ -166,12 +230,10 @@ export function drawAnimalEars(
   const scaleByAnimal: Record<AnimalId, number> = {
     dog: 0.6,
     cow: 0.72,
+    coala: 0.7,
   };
   const earW = fw * (scaleByAnimal[animal] ?? 0.65);
   const earH = earW * (imgH / imgW);
-
-  let anchors = earAnchorPointsLm(lm, width, height, fw);
-  if (!anchors) return;
 
   let dogEarAttach: { left: { x: number; y: number }; right: { x: number; y: number } } | null =
     null;
@@ -193,6 +255,7 @@ export function drawAnimalEars(
   const liftByAnimal: Record<AnimalId, number> = {
     dog: 0,
     cow: 0.5,
+    coala: 0.42,
   };
   const earCenterY = anchors.left.y - earH * (liftByAnimal[animal] ?? 0.4);
 

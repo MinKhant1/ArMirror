@@ -1,0 +1,135 @@
+/* Below mirror border (z-index 100 on .mirror-game::after), above game viewport. */
+.wild-four-border-acc {
+  --acc-fly-duration: 1.65s;
+  --acc-sway-duration: 6.5s;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.wild-four-border-acc__wrap {
+  position: absolute;
+  z-index: 1;
+  animation-duration: var(--acc-fly-duration);
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+  animation-delay: var(--fly-delay, 0s);
+}
+
+.wild-four-border-acc__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: wild-four-acc-sway var(--acc-sway-duration) ease-in-out infinite;
+  animation-delay: calc(var(--fly-delay, 0s) + var(--acc-fly-duration));
+}
+
+@keyframes wild-four-acc-sway {
+  0%,
+  100% {
+    transform: rotate(-30deg);
+  }
+  50% {
+    transform: rotate(30deg);
+  }
+}
+
+/* —— Positions & fly-in (wrapper) —— */
+
+.wild-four-border-acc__wrap--top-left {
+  top: 0;
+  left: 0;
+  width: min(34vw, 400px);
+  animation-name: wild-four-acc-fly-tl;
+}
+
+.wild-four-border-acc__img--top-left {
+  transform-origin: top left;
+}
+
+@keyframes wild-four-acc-fly-tl {
+  from {
+    opacity: 0;
+    transform: translate(-55vw, -50vh);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+.wild-four-border-acc__wrap--right-top {
+  top: 0;
+  right: 0;
+  width: min(36vw, 420px);
+  animation-name: wild-four-acc-fly-tr;
+}
+
+.wild-four-border-acc__img--right-top {
+  transform-origin: top right;
+}
+
+@keyframes wild-four-acc-fly-tr {
+  from {
+    opacity: 0;
+    transform: translate(55vw, -50vh);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+.wild-four-border-acc__wrap--middle-left {
+  top: 50%;
+  left: 0;
+  width: min(26vw, 300px);
+  animation-name: wild-four-acc-fly-ml;
+}
+
+.wild-four-border-acc__img--middle-left {
+  transform-origin: left center;
+}
+
+@keyframes wild-four-acc-fly-ml {
+  from {
+    opacity: 0;
+    transform: translate(-60vw, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+
+.wild-four-border-acc__wrap--bottom-right {
+  right: 0;
+  bottom: 0;
+  width: min(32vw, 380px);
+  animation: none;
+  opacity: 1;
+}
+
+.wild-four-border-acc__img--bottom-right {
+  transform-origin: bottom right;
+  animation: none;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wild-four-border-acc__wrap {
+    animation: none;
+    opacity: 1;
+  }
+
+  .wild-four-border-acc__img {
+    animation: none;
+    transform: none;
+  }
+
+  .wild-four-border-acc__wrap--middle-left {
+    transform: translateY(-50%);
+  }
+}

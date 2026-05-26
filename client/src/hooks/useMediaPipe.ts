@@ -3,10 +3,17 @@ import { createMediaPipeTracker } from '../components/ARMirror/mediaPipeTracker.
 
 type Tracker = Awaited<ReturnType<typeof createMediaPipeTracker>>;
 
-export function useMediaPipe(enabled: boolean) {
+export type UseMediaPipeOptions = {
+  segmentation?: boolean;
+  pose?: boolean;
+  numFaces?: number;
+};
+
+export function useMediaPipe(enabled: boolean, options: UseMediaPipeOptions = {}) {
   const trackerRef = useRef<Tracker | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { segmentation = false, pose = false, numFaces = 4 } = options;
 
   useEffect(() => {
     if (!enabled) return;
@@ -14,11 +21,11 @@ export function useMediaPipe(enabled: boolean) {
 
     createMediaPipeTracker({
       face: true,
-      pose: false,
-      segmentation: false,
+      pose,
+      segmentation,
       blendshapes: true,
       faceTransform: true,
-      numFaces: 4,
+      numFaces,
     })
       .then((tracker) => {
         if (disposed) {
@@ -37,7 +44,7 @@ export function useMediaPipe(enabled: boolean) {
       trackerRef.current?.close();
       trackerRef.current = null;
     };
-  }, [enabled]);
+  }, [enabled, segmentation, pose, numFaces]);
 
   const detect = (video: HTMLVideoElement, timestamp: number) =>
     trackerRef.current?.detect(video, timestamp) ?? {};
