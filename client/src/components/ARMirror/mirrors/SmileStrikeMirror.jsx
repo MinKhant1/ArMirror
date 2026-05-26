@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createMediaPipeTracker } from '../mediaPipeTracker.js';
-import { getCategoryMask, initCamera } from '../shared/mirrorUtils.js';
+import {
+  applySharpCanvasContext,
+  getCategoryMask,
+  initCamera,
+  syncMirrorCanvas,
+} from '../shared/mirrorUtils.js';
 import { drawVirtualBackground } from '../shared/virtualBackground.js';
 import { drawMultiPersonScene } from '../shared/multiPersonComposite.js';
 import {
@@ -59,14 +64,15 @@ export default function SmileStrikeMirror({ onCapture }) {
         });
 
         const canvas = canvasRef.current;
-        canvas.width = width;
-        canvas.height = height;
         const ctx = canvas.getContext('2d');
+        applySharpCanvasContext(ctx);
 
         function render(timestamp) {
           if (disposed) return;
           rafRef.current = requestAnimationFrame(render);
           if (video.readyState < 2) return;
+
+          const { width: w, height: h } = syncMirrorCanvas(canvas, video);
 
           const dt = lastFrameRef.current ? timestamp - lastFrameRef.current : 16;
           lastFrameRef.current = timestamp;
@@ -82,19 +88,19 @@ export default function SmileStrikeMirror({ onCapture }) {
 
           const state = useSmileStrikeStore.getState();
 
-          drawVirtualBackground(ctx, width, height, timestamp);
-          drawRunners(ctx, state.runners, width, height, timestamp);
-          drawMultiPersonScene(ctx, video, faces, poses, mask, width, height);
+          drawVirtualBackground(ctx, w, h, timestamp);
+          drawRunners(ctx, state.runners, w, h, timestamp);
+          drawMultiPersonScene(ctx, video, faces, poses, mask, w, h);
 
           const transformMatrices = results.face?.facialTransformationMatrixes ?? [];
           const lasers = buildLasersFromFaces(
             faces,
             blendshapes,
-            width,
-            height,
+            w,
+            h,
             transformMatrices
           );
-          processLaserHits(lasers, width, height);
+          processLaserHits(lasers, w, h);
           drawEyeLasers(ctx, lasers, timestamp);
           drawExplosions(ctx, state.explosions, timestamp);
 
@@ -106,8 +112,8 @@ export default function SmileStrikeMirror({ onCapture }) {
               gameState: state.gameState,
               faceCount: faces.length,
             },
-            width,
-            height
+            w,
+            h
           );
         }
 

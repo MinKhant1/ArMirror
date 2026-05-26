@@ -11,6 +11,7 @@ type Props = {
 export type ForestHandle = {
   draw: (time: number) => void;
   getCanvas: () => HTMLCanvasElement | null;
+  resize: (w: number, h: number) => void;
 };
 
 type Particle = {
@@ -31,13 +32,13 @@ export const ForestBackground = forwardRef<ForestHandle, Props>(function ForestB
   const particlesRef = useRef<Particle[]>([]);
   const dirtyRef = useRef(true);
 
-  useEffect(() => {
+  const initParticles = (w: number, h: number) => {
     const particles: Particle[] = [];
     for (let i = 0; i < 15; i++) {
       particles.push({
         type: 'leaf',
-        x: Math.random() * width,
-        y: Math.random() * height,
+        x: Math.random() * w,
+        y: Math.random() * h,
         vx: (Math.random() - 0.5) * 0.4,
         vy: 0.3 + Math.random() * 0.5,
         life: 1,
@@ -47,8 +48,8 @@ export const ForestBackground = forwardRef<ForestHandle, Props>(function ForestB
     for (let i = 0; i < 20; i++) {
       particles.push({
         type: 'firefly',
-        x: Math.random() * width,
-        y: Math.random() * height,
+        x: Math.random() * w,
+        y: Math.random() * h,
         vx: (Math.random() - 0.5) * 0.2,
         vy: (Math.random() - 0.5) * 0.2,
         life: Math.random(),
@@ -58,8 +59,8 @@ export const ForestBackground = forwardRef<ForestHandle, Props>(function ForestB
     for (let i = 0; i < 30; i++) {
       particles.push({
         type: 'pollen',
-        x: Math.random() * width,
-        y: Math.random() * height,
+        x: Math.random() * w,
+        y: Math.random() * h,
         vx: (Math.random() - 0.5) * 0.1,
         vy: -0.1 - Math.random() * 0.2,
         life: 0.4,
@@ -68,13 +69,17 @@ export const ForestBackground = forwardRef<ForestHandle, Props>(function ForestB
     }
     particlesRef.current = particles;
     dirtyRef.current = true;
-  }, [width, height]);
+  };
 
   const draw = (time: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    if (width < 2 || height < 2) return;
 
     const fireflyCount = assigned.includes('cat') || fullBloom ? 40 : 20;
     const leafBoost = assigned.includes('dog') || fullBloom ? 1.6 : 1;
@@ -163,18 +168,23 @@ export const ForestBackground = forwardRef<ForestHandle, Props>(function ForestB
     dirtyRef.current = false;
   };
 
+  const resize = (w: number, h: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas || w < 2 || h < 2) return;
+    if (canvas.width === w && canvas.height === h) return;
+    canvas.width = w;
+    canvas.height = h;
+    initParticles(w, h);
+  };
+
   useImperativeHandle(ref, () => ({
     draw,
     getCanvas: () => canvasRef.current,
+    resize,
   }));
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.width = width;
-      canvas.height = height;
-      dirtyRef.current = true;
-    }
+    resize(width, height);
   }, [width, height]);
 
   return <canvas ref={canvasRef} className="wild-four__layer wild-four__forest" aria-hidden />;

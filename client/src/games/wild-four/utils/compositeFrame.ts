@@ -12,7 +12,7 @@ type SegmentationInput =
   | { confidence?: unknown; category?: unknown }
   | null;
 
-const MASK_BLUR_PX = 4;
+const MASK_BLUR_PX = 2;
 const CONFIDENCE_FLOOR = 0.08;
 
 function parseConfidenceMask(mask: unknown): FloatMaskInfo | null {

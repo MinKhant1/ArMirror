@@ -75,29 +75,19 @@
   margin-bottom: 2.5rem;
 }
 
-.theme-selection__crown {
-  font-size: 2rem;
+.theme-selection__logo-img {
   display: block;
-  margin-bottom: 0.25rem;
-  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+  width: min(92vw, 560px);
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 32px rgba(255, 215, 0, 0.4));
 }
 
-.theme-selection__signature {
-  font-family: 'Great Vibes', cursive;
-  font-size: 2.5rem;
-  color: #ffd700;
-  display: block;
-  line-height: 1.2;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-}
-
-.theme-selection__brand {
-  font-family: 'Montserrat', sans-serif;
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  font-weight: 800;
-  letter-spacing: 0.25em;
-  color: #fff;
-  margin-top: 0.25rem;
+@media (min-width: 900px) {
+  .theme-selection__logo-img {
+    width: min(48vw, 640px);
+  }
 }
 
 .theme-selection__main {

@@ -36,7 +36,7 @@ function playersChanged(next: PlayerSlot[], prev: PlayerSlot[]) {
   return false;
 }
 
-export function usePlayerTracking(width: number, height: number) {
+export function usePlayerTracking() {
   const prevCentersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const velocityRef = useRef<Map<number, number>>(new Map());
 
@@ -44,7 +44,9 @@ export function usePlayerTracking(width: number, height: number) {
     faceLandmarks: Landmark[][],
     blendshapeList: unknown[],
     matrices: unknown[],
-    timestamp: number
+    timestamp: number,
+    width: number,
+    height: number
   ) => {
     const packets: {
       slot: number;

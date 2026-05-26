@@ -24,11 +24,13 @@ export default function ThemeSelection() {
 
       <header className="theme-selection__header">
         <div className="theme-selection__logo">
-          <span className="theme-selection__crown" aria-hidden="true">
-            👑
-          </span>
-          <span className="theme-selection__signature">Signature</span>
-          <h1 className="theme-selection__brand">SHAL LIT MOMENTS</h1>
+          <img
+            src="/grand-royal-logo.png"
+            alt="Signature — Shal Lit Moments"
+            className="theme-selection__logo-img"
+            width={640}
+            height={400}
+          />
         </div>
       </header>
 

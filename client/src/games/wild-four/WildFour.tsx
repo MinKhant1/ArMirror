@@ -4,6 +4,7 @@ import { FACE_STABLE_MS } from './config';
 import { useWebcam } from '../../hooks/useWebcam';
 import { useMediaPipe } from '../../hooks/useMediaPipe';
 import { useSegmentation } from '../../hooks/useSegmentation';
+import { getCanvasPixelSize, applySharpCanvasContext } from '../../components/ARMirror/shared/mirrorUtils.js';
 import { drawWildFourFrame, resetMaskCalibration } from './utils/compositeFrame';
 import { useAnimalAssets } from './hooks/useAnimalAssets';
 import { usePlayerTracking } from './hooks/usePlayerTracking';
@@ -55,7 +56,7 @@ export default function WildFour() {
   const assets = useAnimalAssets();
   const { detect, ready: faceReady, error: faceError } = useMediaPipe(camReady);
   const { segment, ready: segReady } = useSegmentation(camReady);
-  const { processFrame } = usePlayerTracking(width, height);
+  const { processFrame } = usePlayerTracking();
   const { render: renderFilters } = useAnimalFilter();
   const roulette = useRoulette();
   const { tick: tickFlow } = useGameFlow(assets.ready);
@@ -154,15 +155,15 @@ export default function WildFour() {
       rafRef.current = requestAnimationFrame(loop);
 
       const video = videoRef.current;
-      const displayW = Math.max(2, Math.round(segCanvas.clientWidth || width));
-      const displayH = Math.max(2, Math.round(segCanvas.clientHeight || height));
-      if (segCanvas.width !== displayW || segCanvas.height !== displayH) {
-        segCanvas.width = displayW;
-        segCanvas.height = displayH;
-        filterCanvas.width = displayW;
-        filterCanvas.height = displayH;
-        fxCanvas.width = displayW;
-        fxCanvas.height = displayH;
+      const { width: w, height: h } = getCanvasPixelSize(segCanvas, width, height);
+      if (segCanvas.width !== w || segCanvas.height !== h) {
+        segCanvas.width = w;
+        segCanvas.height = h;
+        filterCanvas.width = w;
+        filterCanvas.height = h;
+        fxCanvas.width = w;
+        fxCanvas.height = h;
+        forestRef.current?.resize(w, h);
       }
 
       frame += 1;
@@ -185,7 +186,9 @@ export default function WildFour() {
         faces,
         blendshapes,
         matrices,
-        timestamp
+        timestamp,
+        w,
+        h
       );
       trackedRef.current = tracked;
       visibleFacesRef.current = visibleFaces;
@@ -217,8 +220,9 @@ export default function WildFour() {
       const segCtx = segCanvas.getContext('2d')!;
       const filterCtx = filterCanvas.getContext('2d')!;
       const fxCtx = fxCanvas.getContext('2d')!;
-      const w = segCanvas.width;
-      const h = segCanvas.height;
+      applySharpCanvasContext(segCtx);
+      applySharpCanvasContext(filterCtx);
+      applySharpCanvasContext(fxCtx);
 
       segCtx.clearRect(0, 0, w, h);
       forestRef.current?.draw(timestamp);

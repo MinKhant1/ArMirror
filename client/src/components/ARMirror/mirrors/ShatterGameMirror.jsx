@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createMediaPipeTracker, computePoseVelocities } from '../mediaPipeTracker.js';
 import {
+  applySharpCanvasContext,
   createOffscreenCanvas,
   drawMirroredVideo,
   initCamera,
+  syncMirrorCanvas,
 } from '../shared/mirrorUtils.js';
 import {
   CrackSystem,
@@ -60,9 +62,8 @@ export default function ShatterGameMirror({ onCapture }) {
         });
 
         const canvas = canvasRef.current;
-        canvas.width = width;
-        canvas.height = height;
         const ctx = canvas.getContext('2d');
+        applySharpCanvasContext(ctx);
 
         scoreInterval = setInterval(() => {
           if (useShatterStore.getState().gameState === 'playing') {
@@ -74,6 +75,8 @@ export default function ShatterGameMirror({ onCapture }) {
           if (disposed) return;
           rafRef.current = requestAnimationFrame(render);
           if (video.readyState < 2) return;
+
+          const { width: w, height: h } = syncMirrorCanvas(canvas, video);
 
           const dt = prevTimeRef.current ? timestamp - prevTimeRef.current : 16;
           prevTimeRef.current = timestamp;
@@ -99,8 +102,8 @@ export default function ShatterGameMirror({ onCapture }) {
             if (timestamp - lastSpawnRef.current > SPAWN_COOLDOWN_MS) {
               for (const hot of velocity.hotspots) {
                 if (hot.velocity > VELOCITY_THRESHOLD) {
-                  const px = (1 - hot.x) * width;
-                  const py = hot.y * height;
+                  const px = (1 - hot.x) * w;
+                  const py = hot.y * h;
                   crackSystemRef.current.spawn(px, py, hot.velocity / 3);
                   state.addCrack();
                   lastSpawnRef.current = timestamp;
@@ -112,22 +115,22 @@ export default function ShatterGameMirror({ onCapture }) {
 
           crackSystemRef.current.update(dt);
 
-          const base = createOffscreenCanvas(width, height);
+          const base = createOffscreenCanvas(w, h);
           const bctx = base.getContext('2d');
           bctx.fillStyle = '#0a0a12';
-          bctx.fillRect(0, 0, width, height);
-          drawMirroredVideo(bctx, video, width, height);
+          bctx.fillRect(0, 0, w, h);
+          drawMirroredVideo(bctx, video, w, h);
 
           const current = useShatterStore.getState();
-          applyGlitchDistortion(ctx, base, width, height, current.distortion);
-          crackSystemRef.current.draw(ctx, width, height);
+          applyGlitchDistortion(ctx, base, w, h, current.distortion);
+          crackSystemRef.current.draw(ctx, w, h);
 
           if (velocity.avgVelocity < STILL_THRESHOLD && current.stillnessTime > STILL_HEAL_MS) {
-            drawMercuryHeal(ctx, width, height, Math.min(1, current.stillnessTime / 2000));
+            drawMercuryHeal(ctx, w, h, Math.min(1, current.stillnessTime / 2000));
           }
 
           if (current.gameState === 'shattered') {
-            crackSystemRef.current.drawVoronoiShatter(ctx, width, height, 1);
+            crackSystemRef.current.drawVoronoiShatter(ctx, w, h, 1);
           }
 
           drawShatterHUD(
@@ -138,7 +141,7 @@ export default function ShatterGameMirror({ onCapture }) {
               gameState: current.gameState,
               distortion: current.distortion,
             },
-            width
+            w
           );
         }
 

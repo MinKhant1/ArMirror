@@ -92,6 +92,7 @@ function samplePersonAlpha(maskInfo, x, y, frameW, frameH, feather) {
 }
 
 export function drawMirroredVideo(ctx, video, width, height) {
+  applySharpCanvasContext(ctx);
   ctx.save();
   ctx.translate(width, 0);
   ctx.scale(-1, 1);
@@ -206,7 +207,48 @@ async function safePlayVideo(video) {
   }
 }
 
-export async function initCamera(video, ideal = { width: 1280, height: 720 }) {
+export const MAX_RENDER_DPR = 2;
+export const CAMERA_IDEAL = { width: 1920, height: 1080 };
+
+export function getDevicePixelRatio(cap = MAX_RENDER_DPR) {
+  return Math.min(
+    typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+    cap
+  );
+}
+
+/** Match canvas backing store to on-screen size (Retina) and camera resolution. */
+export function syncMirrorCanvas(canvas, video, cap = MAX_RENDER_DPR) {
+  const dpr = getDevicePixelRatio(cap);
+  const cssW = Math.max(2, Math.round(canvas.clientWidth || video?.videoWidth || 1280));
+  const cssH = Math.max(2, Math.round(canvas.clientHeight || video?.videoHeight || 720));
+  const vw = video?.videoWidth || 0;
+  const vh = video?.videoHeight || 0;
+  const width = Math.max(vw, Math.round(cssW * dpr));
+  const height = Math.max(vh, Math.round(cssH * dpr));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  return { width: canvas.width, height: canvas.height, dpr };
+}
+
+export function getCanvasPixelSize(canvas, fallbackW, fallbackH, cap = MAX_RENDER_DPR) {
+  const dpr = getDevicePixelRatio(cap);
+  const cssW = canvas.clientWidth || fallbackW;
+  const cssH = canvas.clientHeight || fallbackH;
+  const width = Math.max(2, Math.round(cssW * dpr));
+  const height = Math.max(2, Math.round(cssH * dpr));
+  return { width, height, dpr };
+}
+
+export function applySharpCanvasContext(ctx) {
+  if (!ctx) return;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+}
+
+export async function initCamera(video, ideal = CAMERA_IDEAL) {
   if (!video?.isConnected) {
     const e = new Error('Video element not in document');
     e.recoverable = true;
@@ -214,7 +256,11 @@ export async function initCamera(video, ideal = { width: 1280, height: 720 }) {
   }
 
   const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'user', width: { ideal: ideal.width }, height: { ideal: ideal.height } },
+    video: {
+      facingMode: 'user',
+      width: { ideal: ideal.width, min: 640 },
+      height: { ideal: ideal.height, min: 480 },
+    },
     audio: false,
   });
 
