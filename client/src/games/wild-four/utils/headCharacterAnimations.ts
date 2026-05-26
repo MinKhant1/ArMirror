@@ -17,13 +17,6 @@ export type VisibleFace = {
 
 const ALL_ANIMS: HeadAnimKind[] = ['bounce', 'wiggle', 'pulse', 'orbit', 'float', 'shake', 'spin'];
 
-const ANIM_BY_IDLE: Record<string, HeadAnimKind[]> = {
-  earTwitch: ['wiggle', 'shake', 'bounce'],
-  earSwing: ['bounce', 'shake', 'orbit'],
-  tailSwish: ['orbit', 'float', 'wiggle'],
-  noseTwitch: ['pulse', 'bounce', 'wiggle'],
-};
-
 /** How long each random animation plays before the icon is removed. */
 const ANIM_DURATION_MS = 2000;
 /** Icon stays hidden this long after the animation ends. */
@@ -44,36 +37,51 @@ export type RouletteDrawState = {
 
 export class HeadCharacterAnimator {
   private slots = new Map<number, SlotState>();
+  private groupStartedAt = 0;
 
-  private pickAnim(animal: AnimalId | null): HeadAnimKind {
-    if (animal) {
-      const idle = ANIMAL_CONFIG[animal].idleAnimation;
-      const pool = ANIM_BY_IDLE[idle] ?? ALL_ANIMS;
-      return pool[Math.floor(Math.random() * pool.length)];
-    }
+  private pickGroupAnim(): HeadAnimKind {
     return ALL_ANIMS[Math.floor(Math.random() * ALL_ANIMS.length)];
   }
 
-  private startCycle(slot: number, animal: AnimalId | null, timeMs: number): SlotState {
-    const state: SlotState = {
-      kind: this.pickAnim(animal),
-      seed: Math.random() * 1000,
-      startedAt: timeMs,
-      animal,
-    };
-    this.slots.set(slot, state);
-    return state;
+  /** Start the same random animation on every active head at once. */
+  private startGroupCycle(faces: VisibleFace[], timeMs: number) {
+    const kind = this.pickGroupAnim();
+    this.groupStartedAt = timeMs;
+    for (const face of faces) {
+      this.slots.set(face.slot, {
+        kind,
+        seed: face.slot * 17.3,
+        startedAt: timeMs,
+        animal: face.animal,
+      });
+    }
   }
 
-  /** Returns state and whether the icon should be drawn (hidden during post-anim pause). */
-  private getCycle(slot: number, animal: AnimalId | null, timeMs: number) {
-    let state = this.slots.get(slot);
-    const cycleMs = ANIM_DURATION_MS + HIDE_AFTER_ANIM_MS;
-
-    if (!state || state.animal !== animal || timeMs >= state.startedAt + cycleMs) {
-      state = this.startCycle(slot, animal, timeMs);
+  private syncGroup(faces: VisibleFace[], timeMs: number) {
+    if (!faces.length) {
+      this.groupStartedAt = 0;
+      return;
     }
 
+    const cycleMs = ANIM_DURATION_MS + HIDE_AFTER_ANIM_MS;
+    const someoneNew = faces.some((f) => !this.slots.has(f.slot));
+    const cycleEnded =
+      this.groupStartedAt > 0 && timeMs >= this.groupStartedAt + cycleMs;
+
+    if (someoneNew || cycleEnded || this.groupStartedAt === 0) {
+      this.startGroupCycle(faces, timeMs);
+      return;
+    }
+
+    for (const face of faces) {
+      const state = this.slots.get(face.slot);
+      if (state) state.animal = face.animal;
+    }
+  }
+
+  private slotVisible(slot: number, timeMs: number) {
+    const state = this.slots.get(slot);
+    if (!state) return { state: null, visible: false };
     const visible = timeMs < state.startedAt + ANIM_DURATION_MS;
     return { state, visible };
   }
@@ -175,6 +183,7 @@ export class HeadCharacterAnimator {
   ) {
     const activeSlots = faces.map((f) => f.slot);
     this.prune(activeSlots);
+    this.syncGroup(faces, timeMs);
 
     for (const face of faces) {
       const top = this.headTop(face, width, height);
@@ -189,19 +198,16 @@ export class HeadCharacterAnimator {
         continue;
       }
 
+      const { state, visible } = this.slotVisible(face.slot, timeMs);
+      if (!state || !visible) continue;
+
       if (!face.animal) {
-        const { state, visible } = this.getCycle(face.slot, null, timeMs);
-        if (visible) {
-          this.drawEmoji(ctx, '❓', top.x, top.y, size * 0.85, timeMs, state.kind, state.seed);
-        }
+        this.drawEmoji(ctx, '❓', top.x, top.y, size * 0.85, timeMs, state.kind, state.seed);
         continue;
       }
 
       const cfg = ANIMAL_CONFIG[face.animal];
-      const { state, visible } = this.getCycle(face.slot, face.animal, timeMs);
-      if (visible) {
-        this.drawEmoji(ctx, cfg.emoji, top.x, top.y, size, timeMs, state.kind, state.seed, cfg.color);
-      }
+      this.drawEmoji(ctx, cfg.emoji, top.x, top.y, size, timeMs, state.kind, state.seed, cfg.color);
     }
   }
 }
