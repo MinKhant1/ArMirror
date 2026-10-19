@@ -39,6 +39,7 @@ html:has(.theme-selection) body {
   z-index: 1;
   width: 100%;
   max-width: 1200px;
+  margin-inline: auto;
 }
 
 .theme-selection__header {
@@ -73,17 +74,17 @@ html:has(.theme-selection) body {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(94vw, 820px);
-  max-height: clamp(80px, 24vh, 240px);
+  max-width: min(70vw, 420px);
+  max-height: clamp(72px, 18vh, 160px);
   margin: 0 auto;
   object-fit: contain;
-  filter: drop-shadow(0 0 32px rgba(255, 215, 0, 0.4));
+  filter: drop-shadow(0 0 28px rgba(180, 200, 255, 0.45));
 }
 
 @media (min-width: 900px) {
   .theme-selection__logo-img {
-    max-width: min(76vw, 960px);
-    max-height: clamp(104px, 28vh, 300px);
+    max-width: min(50vw, 480px);
+    max-height: clamp(88px, 20vh, 180px);
   }
 }
 
@@ -98,23 +99,36 @@ html:has(.theme-selection) body {
 }
 
 .theme-selection__cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(0.4rem, 1.2vw, 1.25rem);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
   width: 100%;
+  max-width: 960px;
   height: 100%;
   max-height: 100%;
-  align-items: center;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .theme-selection .theme-card {
+  flex: 0 1 420px;
+  width: min(420px, calc(50% - 1.25rem));
+  max-width: 420px;
   height: auto;
   max-height: 100%;
   min-height: 0;
-  align-self: center;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .theme-selection .theme-card {
+    width: min(420px, 100%);
+    flex-basis: 100%;
+  }
 }
 
 .theme-selection .theme-card__media {
@@ -125,7 +139,8 @@ html:has(.theme-selection) body {
 .theme-selection .theme-card__image {
   width: 100%;
   height: auto;
-  max-height: 100%;
+  max-height: min(58vh, 100%);
+  object-fit: contain;
 }
 
 .theme-selection .theme-card:hover {
