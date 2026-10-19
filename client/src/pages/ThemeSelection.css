@@ -103,9 +103,9 @@ html:has(.theme-selection) body {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: clamp(1rem, 3vw, 2.5rem);
+  gap: clamp(2rem, 6vw, 4.5rem);
   width: 100%;
-  max-width: 960px;
+  max-width: 1100px;
   height: 100%;
   max-height: 100%;
   margin: 0 auto;
@@ -114,7 +114,7 @@ html:has(.theme-selection) body {
 
 .theme-selection .theme-card {
   flex: 0 1 420px;
-  width: min(420px, calc(50% - 1.25rem));
+  width: min(420px, calc(50% - 2.5rem));
   max-width: 420px;
   height: auto;
   max-height: 100%;
