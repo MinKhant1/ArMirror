@@ -1,6 +1,5 @@
 import galaticImg from '../components/site/galatic.png';
 import animalPartyImg from '../components/site/animal-party.png';
-import powerRangerImg from '../components/site/power-ranger.png';
 
 export const THEMES = [
   {
@@ -22,16 +21,6 @@ export const THEMES = [
     secondary: '#9C7EC4',
     borderGlow: 'rgba(201, 149, 108, 0.5)',
     cardImage: animalPartyImg,
-  },
-  {
-    id: 'shatter-game',
-    mirrorType: 'shatter-game',
-    title: 'SHATTER GAME',
-    subtitle: 'STAY STILL OR BREAK THE MIRROR',
-    accent: '#ef5350',
-    secondary: '#42a5f5',
-    borderGlow: 'rgba(239, 83, 80, 0.55)',
-    cardImage: powerRangerImg,
   },
 ];
 

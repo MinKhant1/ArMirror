@@ -26,8 +26,8 @@ export default function ThemeSelection() {
       <header className="theme-selection__header">
         <div className="theme-selection__logo">
           <img
-            src="/grand-royal-logo.png"
-            alt="Signature — Shal Lit Moments"
+            src="/cas_logo.png"
+            alt="CAS"
             className="theme-selection__logo-img"
             width={640}
             height={400}
